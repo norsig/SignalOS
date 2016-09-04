@@ -1,0 +1,36 @@
+# Contributor: Andrew Manison <amanison@anselsystems.com>
+# Maintainer:  Fabian Affolter <fabian@affolter-engineering.ch>
+pkgname=py-setuptools
+_pkgname=${pkgname#py-}
+pkgver=24.0.3
+pkgrel=3
+pkgdesc="A collection of enhancements to the Python distutils"
+url="http://pypi.python.org/pypi/setuptools"
+arch="noarch"
+license="PSF"
+depends="python"
+makedepends="python-dev"
+install=""
+subpackages=""
+source="${_pkgname}-${pkgver}.tar.gz::https://github.com/pypa/${_pkgname}/archive/v${pkgver}.tar.gz
+	"
+
+builddir="$srcdir"/$_pkgname-$pkgver
+
+build() {
+	cd "$builddir"
+	python bootstrap.py || return 1
+	python setup.py build || return 1
+}
+
+package() {
+	cd "$builddir"
+	python setup.py install --prefix=/usr --root="$pkgdir" || return 1
+
+	# we don't provide a non-suffixed easy_install
+	rm -f "$pkgdir"/usr/bin/easy_install || return 1
+}
+
+md5sums="11472d17f777b83757681d0608ae9aee  setuptools-24.0.3.tar.gz"
+sha256sums="b342d2d457a678d558e51aaab79640360d350b0044816259b3085e079adcbdcf  setuptools-24.0.3.tar.gz"
+sha512sums="f664e1feb417e2eb0f8658ee0f2cb3b308b3e11d5dde6b67cefc7549b0693be268343fd508e654ea0b8080658373d260e537b54ec18499c35e078fd6b79de952  setuptools-24.0.3.tar.gz"

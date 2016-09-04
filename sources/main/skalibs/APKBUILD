@@ -1,0 +1,60 @@
+# Maintainer: Laurent Bercot <ska-devel@skarnet.org>
+# Contributor: John Regan <john@jrjrtech.com>
+pkgname=skalibs
+pkgver=2.3.10.0
+pkgrel=0
+pkgdesc="A set of general-purpose C programming libraries for skarnet.org software."
+url="http://skarnet.org/software/skalibs/"
+arch="all"
+license="ISC"
+depends=""
+depends_dev=""
+makedepends="$depends_dev"
+install=""
+subpackages="$pkgname-dev $pkgname-doc"
+source="http://skarnet.org/software/$pkgname/$pkgname-$pkgver.tar.gz"
+
+_builddir="$srcdir/$pkgname-$pkgver"
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--enable-shared \
+		--enable-static \
+		--libdir=/usr/lib \
+                --enable-clock \
+		--enable-force-devr \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+dev() {
+	default_dev
+	cd "$subpkgdir"
+	mv -f "$pkgdir/usr/lib/$pkgname"/sysdeps/* "usr/lib/$pkgname/sysdeps/"
+	rm -rf "$pkgdir/usr"
+}
+
+doc() {
+	default_doc
+	mkdir -p "$subpkgdir/usr/share/doc"
+	cp -a "$_builddir/doc" "$subpkgdir/usr/share/doc/$pkgname"
+}
+
+md5sums="51cb8484896c68eb8d167767cdfc702e  skalibs-2.3.10.0.tar.gz"
+sha256sums="e4d5147941055b2a367794666f773a4b216c3ae83c015a5fcf2cd0498470ea44  skalibs-2.3.10.0.tar.gz"
+sha512sums="9120554a91ef292a8094c4c036b0e93c8db0576d72597c720eca3562d7239da673ace12b9f73747d957a993a780f112b9b7d03030451c1d0b33eaf90b402832a  skalibs-2.3.10.0.tar.gz"

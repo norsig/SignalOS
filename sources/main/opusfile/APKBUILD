@@ -1,0 +1,39 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=opusfile
+pkgver=0.8
+pkgrel=0
+pkgdesc="A high-level API for decoding and seeking within .opus files"
+url="http://www.opus-codec.org/"
+arch="all"
+license="BSD"
+depends=""
+depends_dev="libogg-dev openssl-dev opus-dev"
+makedepends="$depends_dev"
+install=""
+subpackages="$pkgname-dev $pkgname-doc"
+source="http://downloads.xiph.org/releases/opus/$pkgname-$pkgver.tar.gz"
+
+builddir="$srcdir"/$pkgname-$pkgver
+build() {
+	cd "$builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--localstatedir=/var \
+		--disable-static \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+md5sums="78ad26f75900dc8428d75e6e4256196d  opusfile-0.8.tar.gz"
+sha256sums="2c231ed3cfaa1b3173f52d740e5bbd77d51b9dfecb87014b404917fba4b855a4  opusfile-0.8.tar.gz"
+sha512sums="4db553211ac52b9cd9c03449e602fb720d757df385b74e076ce3552a17ecf0e80c861c326fd2570b26f5ffc1c42dff781eef61c25d7a016116a021c9d2176bbb  opusfile-0.8.tar.gz"

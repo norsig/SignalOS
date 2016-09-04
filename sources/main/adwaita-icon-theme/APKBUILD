@@ -1,0 +1,58 @@
+# Contributor: Łukasz Jendrysik <scadu@yandex.com>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=adwaita-icon-theme
+pkgver=3.21.2
+pkgrel=0
+pkgdesc="Adwaita icon theme"
+url="http://www.gnome.org"
+arch="noarch"
+license="LGPLv3+ or CC-BY-SA"
+depends=""
+depends_dev=""
+makedepends="$depends_dev intltool gtk+2.0 gtk+3.0 librsvg"
+install=""
+subpackages="$pkgname-dev"
+case $pkgver in
+*.*.*.*) _v=${pkgver%.*.*};;
+*.*.*) _v=${pkgver%.*};;
+*) _v=$pkgver;;
+esac
+
+source="http://download.gnome.org/sources/adwaita-icon-theme/${_v}/adwaita-icon-theme-$pkgver.tar.xz"
+
+_builddir="$srcdir"/adwaita-icon-theme-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	DATADIRNAME=share \
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--localstatedir=/var \
+		|| return 1
+	make DATADIRNAME=share || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install pkgconfigdir=/usr/lib/pkgconfig\
+		DATADIRNAME=share \
+		|| return 1
+}
+
+md5sums="cdd4e593ba8bd886c8f26bbaa9219fb1  adwaita-icon-theme-3.21.2.tar.xz"
+sha256sums="c083bc8188e5d84379fcd93d2ac833ab1b6138f35a330e2a63048a4f63afd165  adwaita-icon-theme-3.21.2.tar.xz"
+sha512sums="23d8914d86281d84c60629dd8a2edb188ec11d0be0d39d9a08954f1896d39757fdf41d0f343f72e570d55b0fc7448a6183f34726d737fe24c270b86bcadd0f6b  adwaita-icon-theme-3.21.2.tar.xz"

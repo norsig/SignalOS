@@ -1,0 +1,15 @@
+#!/sbin/runscript
+
+depend() {
+	need localmount dbus
+}
+
+description="Lightweigh display manager"
+command="/usr/sbin/lightdm"
+command_background="yes"
+pidfile="/var/run/lightdm.pid"
+
+start_pre() {
+	checkpath --owner lightdm:lightdm --directory /var/run/lightdm
+}
+

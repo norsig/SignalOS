@@ -1,0 +1,54 @@
+# Contributor: Leonardo Arena <larena@alpinelinux.org>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=ngircd
+pkgver=23
+pkgrel=2
+pkgdesc="Next Generation IRC Daemon"
+url="http://ngircd.barton.de/"
+arch="all"
+license="GPL2+"
+depends=""
+makedepends="openssl-dev zlib-dev linux-pam-dev"
+subpackages="$pkgname-doc"
+install="$pkgname.pre-install"
+source="http://ngircd.barton.de/pub/ngircd/ngircd-$pkgver.tar.xz
+	$pkgname.initd
+	"
+_builddir="$srcdir"/$pkgname-$pkgver
+prepare() {
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc/ngircd \
+		--mandir=/usr/share/man \
+		--without-ident \
+		--with-openssl \
+		--with-pam \
+		--enable-ipv6 \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+	install -Dm755 ../$pkgname.initd "$pkgdir"/etc/init.d/$pkgname
+}
+
+md5sums="b438e9044b9fabebf1ba9b07d09f5add  ngircd-23.tar.xz
+51c3679a7c1f2f5522031fa856e34734  ngircd.initd"
+sha256sums="d431bdbc07401b29696b2119963dde2322052a7d8924188947fa3870a138fb6a  ngircd-23.tar.xz
+890d0dc433a8d7f082c35ba806bac53f19d2d4352fcb7127cc28741abcbd6a75  ngircd.initd"
+sha512sums="06a71f33c4f07de826aeed64caf1d530da36cc7e654d87e5407ccc8e6e8bf4b64ff2f983070ad04fc4c66331ae3a015775b59aa7a40e4f07ea28a4d123da4ed4  ngircd-23.tar.xz
+50339507917c956a38451394a8a5996337ff29948944ff6aa40ed39f6dd3d6bfdfb864d60a24199c0a86a01e18a71f213efa6cfb2857a320f31b9fcfb92c6ac1  ngircd.initd"

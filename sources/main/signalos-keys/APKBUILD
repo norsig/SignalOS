@@ -1,0 +1,29 @@
+# Maintainer: Jason Swanson <jswanson@northernsignal.com>
+pkgname=signalos-keys
+pkgver=2.2
+pkgrel=0
+pkgdesc="Public keys for SignalOS packages"
+url="https://northernsignal.com/signalos"
+arch="noarch"
+license="GPL"
+depends=""
+makedepends=""
+install=""
+subpackages=""
+replaces="signalos-base"
+source="signalos@repo.norsig.com-57ae2079.rsa.pub"
+
+build() {
+	return 0
+}
+
+package() {
+	# copy keys for repos
+	mkdir -p "$pkgdir"/etc/apk/keys
+	install -m644 "$srcdir"/signalos*.pub \
+		"$pkgdir"/etc/apk/keys/ || return 1
+}
+
+md5sums="da53bc66d2e5666eaba570ef831ea667  signalos@repo.norsig.com-57ae2079.rsa.pub"
+sha256sums="d1bc5ecbeab5dcf793d3bf68c70b3419198a52f9fc2a5354c3b8b00431173f3d  signalos@repo.norsig.com-57ae2079.rsa.pub"
+sha512sums="f85137a8fd9d682e1715daf6b17b42ba0d81417babdcf89957e5f33a8ebd5bc40d76f163967f2c67b83f1662a8775825fa3eb6e87ad029a7788f5aecb19154c2  signalos@repo.norsig.com-57ae2079.rsa.pub"

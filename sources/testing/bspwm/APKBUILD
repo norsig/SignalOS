@@ -1,0 +1,55 @@
+# Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Maintainer: Sören Tempel <soeren+alpine@soeren-tempel.net>
+pkgname=bspwm
+pkgver=0.9.1
+pkgrel=1
+pkgdesc="Tiling window manager based on binary space partitioning"
+url="https://github.com/baskerville/bspwm"
+arch="all"
+license="BSD"
+depends=""
+depends_dev=""
+makedepends="libxcb-dev xcb-util-dev xcb-util-wm-dev"
+install=""
+subpackages="
+	$pkgname-doc
+	$pkgname-zsh-completion:zshcomp
+	$pkgname-bash-completion:bashcomp"
+source="$pkgname-$pkgver.tar.gz::https://github.com/baskerville/$pkgname/archive/$pkgver.tar.gz"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+build() {
+	make PREFIX=/usr -C "$_builddir" || return 1
+}
+
+package() {
+	make DESTDIR="$pkgdir" PREFIX=/usr \
+		-C "$_builddir" install || return 1
+}
+
+zshcomp() {
+	depends=""
+	pkgdesc="Zsh completions for $pkgname"
+	install_if="$pkgname=$pkgver-r$pkgrel zsh"
+	arch="noarch"
+
+	mkdir -p "$subpkgdir"/usr/share/zsh/site-functions
+	mv "$pkgdir"/usr/share/zsh/site-functions/* \
+		"$subpkgdir"/usr/share/zsh/site-functions || return 1
+
+}
+
+bashcomp() {
+	depends=""
+	pkgdesc="Bash completions for $pkgname"
+	install_if="$pkgname=$pkgver-r$pkgrel bash-completion"
+	arch="noarch"
+
+	mkdir -p "$subpkgdir"/usr/share/bash-completion/completions/
+	mv "$pkgdir"/usr/share/bash-completion/completions/* \
+		"$subpkgdir"/usr/share/bash-completion/completions/ || return 1
+}
+
+md5sums="716849914454dffdf92f56c9f25892ea  bspwm-0.9.1.tar.gz"
+sha256sums="02bb58a307acdec242eb4b8a62764ed53d01c30474dfb1bc09812d943773bb85  bspwm-0.9.1.tar.gz"
+sha512sums="0940e4e024326a903189e6f46fb713eec202f718a02cece56476e6cda147aec6f8c6d6d646879b297b56a385c3b1714069ad204cf5ec0a5d7a0faf40cc45f74b  bspwm-0.9.1.tar.gz"

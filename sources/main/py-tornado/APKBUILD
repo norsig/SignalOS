@@ -1,0 +1,40 @@
+# Maintainer: Peter Bui <pnutzh4x0r@gmail.com>
+pkgname=py-tornado
+_pkgname=tornado
+pkgver=4.4
+pkgrel=0
+pkgdesc="Python web framework and asynchronous networking library"
+url="http://www.tornadoweb.org/"
+arch="all"
+license="ASL 2.0"
+depends="python py-backports.ssl_match_hostname py-backports_abc py-certifi py-singledispatch"
+depends_dev="py-setuptools"
+makedepends="python-dev $depends_dev"
+install=""
+subpackages=""
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz"
+
+_builddir="$srcdir"/$_pkgname-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	python setup.py build || return 1
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py install --prefix=/usr --root="$pkgdir" --optimize=1 || return 1
+}
+
+md5sums="5fc47b25bea3da157b0b95745a09561d  tornado-4.4.tar.gz"
+sha256sums="3176545b6cb2966870db4def4f646da6ab7a0c19400576969c57279a7561ab02  tornado-4.4.tar.gz"
+sha512sums="20a3c7922e1e7ec87553478a221f7ba3f1367d083fff6e75ea7770d6d433c89f276f12f0d8bd408da0eee165c070b71895257a17bfa6b99d70b01a011ce306e1  tornado-4.4.tar.gz"

@@ -1,0 +1,53 @@
+# Contributor: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=spice
+pkgver=0.12.8
+pkgrel=1
+pkgdesc="Implements the SPICE protocol"
+url="http://www.spice-space.org/"
+arch="all"
+license="LGPLv2+"
+depends=""
+depends_dev="spice-protocol pixman-dev celt051-dev openssl-dev libxinerama-dev"
+makedepends="$depends_dev alsa-lib-dev libjpeg-turbo-dev libxrandr-dev
+	cyrus-sasl-dev libxfixes-dev python-dev bash cegui06-dev py-parsing
+	py-six glib-dev opus-dev"
+install=""
+subpackages="$pkgname-dev $pkgname-server"
+source="http://www.spice-space.org/download/releases/$pkgname-$pkgver.tar.bz2
+	"
+
+builddir="$srcdir"/$pkgname-$pkgver
+build() {
+	cd "$builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--localstatedir=/var \
+		--enable-gui \
+		--enable-client \
+		--disable-smartcard \
+		--enable-opus \
+		|| return 1
+	make -C spice-common WARN_CFLAGS='' || return 1
+	make WARN_CFLAGS='' || return 1
+}
+
+package() {
+	cd "$builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+server() {
+	pkgdesc="Server library for SPICE"
+	mkdir -p "$subpkgdir"/usr/lib
+	mv "$pkgdir"/usr/lib/*server.so.* "$subpkgdir"/usr/lib/
+}
+
+md5sums="376853d11b9921aa34a06c4dbef81874  spice-0.12.8.tar.bz2"
+sha256sums="f901a5c5873d61acac84642f9eea5c4d6386fc3e525c2b68792322794e1c407d  spice-0.12.8.tar.bz2"
+sha512sums="6485d3522af1cde93d2c0abad7f7ef9f2e4d3e5049314fb93b6dd4b86e33d67d353a3ff42a355c8fd991bad447bbde1e6320c083bbc6f02b576bd9cebe7269ed  spice-0.12.8.tar.bz2"

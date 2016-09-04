@@ -1,0 +1,301 @@
+# Contributor: Timo Teras <timo.teras@iki.fi>
+# Contributor: Jakub Jirutka <jakub@jirutka.cz>
+# Maintainer: Timo Teras <timo.teras@iki.fi>
+pkgname=openjdk7
+_icedteaver=2.6.7
+# pkgver is <JDK version>.<JDK update>
+# check icedtea JDK when updating
+pkgver=7.111.$_icedteaver
+pkgrel=0
+pkgdesc="OpenJDK 7 via IcedTea"
+url="http://icedtea.classpath.org/"
+arch="all"
+license="GPL2 with Classpath"
+depends="$pkgname-jre"
+options="sover-namecheck"
+makedepends="bash findutils tar zip file paxmark gawk util-linux libxslt
+	autoconf automake linux-headers coreutils
+	ca-certificates
+	nss-dev cups-dev jpeg-dev giflib-dev libpng-dev libxt-dev
+	lcms2-dev libxp-dev libxtst-dev libxinerama-dev zlib-dev
+	libxrender-dev alsa-lib-dev freetype-dev fontconfig-dev
+	gtk+2.0-dev krb5-dev attr-dev pcsc-lite-dev lksctp-tools-dev
+	libxcomposite-dev"
+install=""
+
+# upstream binary versions
+RHINO_VER=1.7.7.1
+ANT_VER=1.9.7
+
+case $CARCH in
+x86)		_jarch=i386;;
+x86_64)		_jarch=amd64;;
+aarch64)	_jarch=aarch64;;
+arm*)		_jarch=arm
+		# openjdk has quite a bit of arm assembly producing textrels
+		# and it's non trivial to fix. allow it for now.
+		options="$options textrels";;
+esac
+
+INSTALL_BASE=/usr/lib/jvm/java-1.7-openjdk
+_jrelib="$INSTALL_BASE/jre/lib/$_jarch"
+
+# exclude xawt from ldpath to avoid duplicate provides for libmawt.so
+# (also in headless). in future this should be a virtual provides.
+ldpath="$_jrelib:$_jrelib/native_threads:$_jrelib/headless:$_jrelib/server:$_jrelib/jli"
+sonameprefix="$pkgname:"
+
+subpackages="$pkgname-jre-lib:jrelib $pkgname-jre $pkgname-jre-base:jrebase
+	$pkgname-doc:doc"
+
+if [ "$BOOTSTRAP" != "no" ]; then
+	makedepends="$makedepends java-gcj-compat"
+	BOOTSTRAP_JAVA_HOME=/usr/lib/jvm/java-1.5-gcj/
+else
+	makedepends="$makedepends $pkgname"
+	BOOTSTRAP_JAVA_HOME="$INSTALL_BASE"
+fi
+
+_dropsver=$_icedteaver
+_dropsurl=http://icedtea.classpath.org/download/drops/icedtea7/$_dropsver
+
+source="http://icedtea.classpath.org/download/source/icedtea-$_icedteaver.tar.gz
+	openjdk-$_dropsver.tar.bz2::$_dropsurl/openjdk.tar.bz2
+	corba-$_dropsver.tar.bz2::$_dropsurl/corba.tar.bz2
+	jaxp-$_dropsver.tar.bz2::$_dropsurl/jaxp.tar.bz2
+	jaxws-$_dropsver.tar.bz2::$_dropsurl/jaxws.tar.bz2
+	jdk-$_dropsver.tar.bz2::$_dropsurl/jdk.tar.bz2
+	langtools-$_dropsver.tar.bz2::$_dropsurl/langtools.tar.bz2
+	hotspot-$_dropsver.tar.bz2::$_dropsurl/hotspot.tar.bz2
+	http://archive.apache.org/dist/ant/binaries/apache-ant-$ANT_VER-bin.tar.gz
+	https://github.com/mozilla/rhino/releases/download/Rhino${RHINO_VER//./_}_RELEASE/rhino-$RHINO_VER.zip
+
+	icedtea-hotspot-musl.patch
+	icedtea-hotspot-noagent-musl.patch
+	icedtea-hotspot-uclibc-fixes.patch
+	icedtea-jdk-fix-build.patch
+	icedtea-jdk-execinfo.patch
+	icedtea-jdk-fix-ipv6-init.patch
+	icedtea-jdk-musl.patch
+	icedtea-jdk-no-soname.patch
+	"
+
+# icedtea6-1.9.7-generate_cacerts-1.patch
+
+builddir="$srcdir/icedtea-$_icedteaver"
+
+unpack() {
+	if [ -z "$force" ]; then
+		verify || return 1
+		initdcheck || return 1
+	fi
+	mkdir -p "$srcdir"
+	msg "Unpacking sources..."
+	tar -C "$srcdir" -zxf icedtea-$_icedteaver.tar.gz || return 1
+	tar -C "$srcdir" -zxf apache-ant-$ANT_VER-bin.tar.gz || return 1
+	unzip -o -q "rhino-$RHINO_VER.zip" -d "$srcdir" || return 1
+}
+
+prepare() {
+	cd "$builddir"
+
+	# Busybox sha256 does not support longopts
+	sed -e "s/--check/-c/g" -i Makefile.am
+
+	for patch in $source; do
+		case $patch in
+		icedtea-*.patch)
+			cp ../$patch patches
+			;;
+		*.patch)
+			msg "Applying patch $patch"
+			patch -p1 -i "$srcdir"/$patch || return 1
+			;;
+		esac
+	done
+
+	./autogen.sh
+}
+
+build() {
+	[ -z "$JOBS" ] && export JOBS=$(echo $MAKEFLAGS | sed -n -e 's/.*-j\([0-9]\+\).*/\1/p')
+	export ALT_PARALLEL_COMPILE_JOBS="${JOBS:-2}"
+	export HOTSPOT_BUILD_JOBS="${JOBS:-2}"
+
+	export JAVA_HOME=$BOOTSTRAP_JAVA_HOME
+	export PATH=$JAVA_HOME/bin:$srcdir/apache-ant-$ANT_VER/bin:$PATH
+	export DISTRIBUTION_PATCHES=""
+
+	# Explicitly set the C++ standard as the default has changed on GCC 6+
+	# and disable optimizations that lead to a broken JVM. These options
+	# has been adopted from the Fedora package.
+	export EXTRA_CPP_FLAGS="$CXXFLAGS -std=gnu++98 -fno-delete-null-pointer-checks -fno-lifetime-dse"
+	# CXXFLAGS doesn't make it to all calls, so we set the C++ standard
+	# version for C too.
+	export EXTRA_CFLAGS="$CFLAGS -std=gnu++98 -Wno-error -fno-delete-null-pointer-checks -fno-lifetime-dse"
+
+	local patch
+	for patch in $source; do
+		case $patch in
+		icedtea-*.patch)
+			export DISTRIBUTION_PATCHES="$DISTRIBUTION_PATCHES patches/$patch"
+			;;
+		esac
+	done
+	echo "icedtea patches: $DISTRIBUTION_PATCHES"
+
+	cd "$builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=$INSTALL_BASE \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--localstatedir=/var \
+		--with-parallel-jobs=${JOBS:-2} \
+		--disable-dependency-tracking \
+		--disable-downloading \
+		--with-rhino=$srcdir/rhino$RHINO_VER/lib/rhino-$RHINO_VER.jar \
+		--with-openjdk-src-zip=$srcdir/openjdk-$_dropsver.tar.bz2 \
+		--with-hotspot-src-zip=$srcdir/hotspot-$_dropsver.tar.bz2 \
+		--with-corba-src-zip=$srcdir/corba-$_dropsver.tar.bz2 \
+		--with-jaxp-src-zip=$srcdir/jaxp-$_dropsver.tar.bz2 \
+		--with-jaxws-src-zip=$srcdir/jaxws-$_dropsver.tar.bz2 \
+		--with-jdk-src-zip=$srcdir/jdk-$_dropsver.tar.bz2 \
+		--with-langtools-src-zip=$srcdir/langtools-$_dropsver.tar.bz2 \
+		--with-pax=paxmark \
+		--with-jdk-home=$BOOTSTRAP_JAVA_HOME \
+		--with-pkgversion="Alpine ${pkgver}-r${pkgrel}" \
+		|| return 1
+
+	msg "Icedtea boot"
+	make -j1 icedtea-boot || return 1
+	msg "Icedtea boot done"
+	make || return 1
+}
+
+package() {
+	mkdir -p "$pkgdir"/$INSTALL_BASE
+	cp -a "$builddir"/openjdk.build/j2sdk-image/* "$pkgdir"/$INSTALL_BASE || return 1
+	rm "$pkgdir"/$INSTALL_BASE/src.zip
+
+	# pax mark again (due to fakeroot xattr handling bug)
+	"$builddir"/pax-mark-vm "$pkgdir"/$INSTALL_BASE
+}
+
+jrelib() {
+	pkgdesc="OpenJDK 7 Java Runtime (class libraries)"
+	arch="noarch"
+	depends=""
+
+	local A; for A in jre/lib/zi jre/lib/images jre/lib/*.jar \
+			jre/lib/security jre/lib/ext/*.jar jre/lib/cmm \
+			jre/ASSEMBLY_EXCEPTION jre/THIRD_PARTY_README jre/LICENSE; do
+
+		local dirname=${A%/*}
+		mkdir -p "$subpkgdir"/$INSTALL_BASE/$dirname
+		mv "$pkgdir"/$INSTALL_BASE/$A "$subpkgdir"/$INSTALL_BASE/$dirname || return 1
+	done
+}
+
+jrebase() {
+	pkgdesc="OpenJDK 7 Java Runtime (no GUI support)"
+	depends="$pkgname-jre-lib java-common"
+
+	mkdir -p "$subpkgdir"/$INSTALL_BASE/bin
+
+	local A; for A in java orbd rmid servertool unpack200 keytool \
+			pack200 rmiregistry tnameserv; do
+		mv "$pkgdir"/$INSTALL_BASE/bin/$A "$subpkgdir"/$INSTALL_BASE/bin || return 1
+	done
+
+	# rest of the jre subdir (which were not taken by -jre subpkg)
+	mv "$pkgdir"/$INSTALL_BASE/jre "$subpkgdir"/$INSTALL_BASE || return 1
+
+	# pax mark again (due to fakeroot xattr handling bug)
+	"$builddir"/pax-mark-vm "$subpkgdir"/$INSTALL_BASE
+}
+
+jre() {
+	pkgdesc="OpenJDK 7 Java Runtime"
+	# manually depend to avoid clash with libgcj's libjvm.so
+	depends="so:openjdk7:libjvm.so=0"
+
+	mkdir -p "$subpkgdir"
+	local A; for A in jre/bin/policytool \
+			bin/appletviewer \
+			bin/policytool \
+			jre/lib/$_jarch/xawt \
+			jre/lib/$_jarch/libsplashscreen.so; do
+
+		local dirname=${A%/*}
+		mkdir -p "$subpkgdir"/$INSTALL_BASE/$dirname
+		mv "$pkgdir"/$INSTALL_BASE/$A "$subpkgdir"/$INSTALL_BASE/$dirname || return 1
+	done
+
+	# pax mark again (due to fakeroot xattr handling bug)
+	"$builddir"/pax-mark-vm "$subpkgdir"/$INSTALL_BASE
+}
+
+doc() {
+	default_doc || return 1
+
+	mkdir -p "$subpkgdir"/$INSTALL_BASE/
+	mv "$pkgdir"/$INSTALL_BASE/man "$subpkgdir"/$INSTALL_BASE/
+}
+
+md5sums="1cb1214bff5aa9f2d278715c8f694f55  icedtea-2.6.7.tar.gz
+fd13f8cdeaa31b71c4cfe131e29f1936  openjdk-2.6.7.tar.bz2
+49387b060090f090313e1aa30ad22c62  corba-2.6.7.tar.bz2
+f4aab7046a2ce7d06245da3c9f6f6682  jaxp-2.6.7.tar.bz2
+f5dfc808f7c8ac4cd8c41670881476be  jaxws-2.6.7.tar.bz2
+610434e1fd77ee59860ced5a2eafac32  jdk-2.6.7.tar.bz2
+1a107a57717b0e524eedd5343f67196f  langtools-2.6.7.tar.bz2
+c90b9af0914737c40491109633020cf1  hotspot-2.6.7.tar.bz2
+bc1d9e5fe73eee5c50b26ed411fb0119  apache-ant-1.9.7-bin.tar.gz
+84428130578f1d86ad9bf7230447b99d  rhino-1.7.7.1.zip
+938bc5cd8303a7b931b818ec690127fb  icedtea-hotspot-musl.patch
+bf8b50e157d80a8b884c1aa4f8124812  icedtea-hotspot-noagent-musl.patch
+43023861c5f6efc3139a834aa3ec0476  icedtea-hotspot-uclibc-fixes.patch
+07c7ab583808e8c8ceb46aff9c265aa4  icedtea-jdk-fix-build.patch
+bd623081d5d2e63694c3649975b12412  icedtea-jdk-execinfo.patch
+250b0807b59762670954b132e8f8dfba  icedtea-jdk-fix-ipv6-init.patch
+66f6e66eb135f0d88847910f6581d323  icedtea-jdk-musl.patch
+d014431e70cdabb82a75e4b9ae4c28a9  icedtea-jdk-no-soname.patch"
+sha256sums="55dc6f3cf3a49745132c53592f0980c1aca37385c12dce33fea229471979c88e  icedtea-2.6.7.tar.gz
+5cacafbe543ad4b9179ab1cbfdb7d9baf8aa04d954510b9e7baf0bfef7db6878  openjdk-2.6.7.tar.bz2
+0049439ea08f8391c0dae464ceb249f0af9d8e70c68142a734ceb25fa145e764  corba-2.6.7.tar.bz2
+9fbd60855406879b898843d7eeac2a5df64b0ccdeb927c615c5be648b8fac70b  jaxp-2.6.7.tar.bz2
+c9fcc1553bbb4fe1dd5ae4616b6a1f52f42c2bb990fd1cbdafeac43bfd6b30f7  jaxws-2.6.7.tar.bz2
+e93cd330b2346bc6145bb76a141233aa1cc083eb25bbc82819632e1581290d81  jdk-2.6.7.tar.bz2
+13e700318ed4a00bc85890525a1fe16b7ff4798ad9e49acdf730b6dfe1a6b4e4  langtools-2.6.7.tar.bz2
+0412594f4dabd77a759957bba038aedf277dee87d06153505fb63919c0cb6a5c  hotspot-2.6.7.tar.bz2
+1d0b808fe82cce9bcc167f8dbb7c7e89c1d7f7534c0d9c64bf615ec7c3e6bfe5  apache-ant-1.9.7-bin.tar.gz
+f753d82002927208139f374e47febb35d7832a10890f57bb1a3c28cad0de6e84  rhino-1.7.7.1.zip
+648eb9dd33f01cb5b85036f3a32c85520f9628e7c7c81c164195a590554ca043  icedtea-hotspot-musl.patch
+1d937de95323094294c33dd490fc460f78502259eee3bf4b352ac7c7c6cf626f  icedtea-hotspot-noagent-musl.patch
+0ef7592b8f2c954eda0a6cf4dc4a4010942f35ea426f44e34412be6c9a949745  icedtea-hotspot-uclibc-fixes.patch
+33b18e827a13cc46be11a4491deefac171c8c2c4fbdd3e0cb4a5fdafa560f958  icedtea-jdk-fix-build.patch
+6cebef19d8eec5a4623a96c37ae71b79d124a10478c1db33ad5fc71bc04b30e9  icedtea-jdk-execinfo.patch
+632683ec88a6fb250ef043aae9cace605d0c669b7058f8c47b62b09b03ecc6c5  icedtea-jdk-fix-ipv6-init.patch
+b3f82269f69483d3fe137e369f9325003ce7872d886cdf67705b434ce949b5bc  icedtea-jdk-musl.patch
+6c0bbe710395c4ced1359ab279be6a7c36da5bfb9fd60dc47d920f06a0456d82  icedtea-jdk-no-soname.patch"
+sha512sums="f1e68ffde0663b1b987f5d851c7006801aef8a599e270118cde9f72f5c203bc3befb3793e16b7519740125d4e58d9b449d5c12bccafb890dd60dbac4d7f2c1a5  icedtea-2.6.7.tar.gz
+819acf776e423bb5bcb8682967ac0fb3fcc37da4ada618d5da186d052d6958611f537799c7cec0ceb57fbf677727840dbf8cd569d9f2226693c6551586de2ae4  openjdk-2.6.7.tar.bz2
+735553ba107df875b61bea38735309ddd1d99cdce989826eaae3587efb10b2a99a3ec1bd749574d17bf502dd7cdcb12436a1a7d608fa1b44b8bbb79b603d8dfc  corba-2.6.7.tar.bz2
+2483561e7ad0f6e201740689dffc097419d53640d394883026ec216b7ecacafb5f1952b12e5229fd5a6cd9174388fb45105bebcf80cefd7feb592b33e2f65b24  jaxp-2.6.7.tar.bz2
+e9c65a65dc61bdbc56bf7f0ff7945abfdff95551c0484fb031a29a540a692f11309916c76f2d8717f88a3d93fc59f6a97aa21d24231668f6d49c3afbc403bad1  jaxws-2.6.7.tar.bz2
+ac07270f88f6b1359224d665ad8e0c44d3a50fec186e9ee5291885d5574f0c77d3c2660583d2b09b21945213ace25dcdb45f72e2738794721901c22d740ca110  jdk-2.6.7.tar.bz2
+d26044cbd0104d27449c84bc24a687809c67a48926a23de5e155600f456a0a35514571304b38b63017d81d1c61991908e1d10cb60616dc16f9ba4635f3adad4c  langtools-2.6.7.tar.bz2
+9dc53d5f9bff967dffb994779621464540b94239a209d75482a6529d4b284bf40469ca180ada1a20cdede894d5b5d1297946db5d7ba5fc7d875c33b2d3559a02  hotspot-2.6.7.tar.bz2
+85d35441a3ecb1eb5c87b112ee9f3a8accbb16a1b9e249f706f0253566fcda7952f5a9cc08bd8c829b1c93d40ae452e1b1c9e29523a51a3c8a5032fa9c22e135  apache-ant-1.9.7-bin.tar.gz
+fba60e83db6e6dd7ef0a834e8aa6858af41b973e01a54392f11ed1d7d152b9641a48e5d473b434e062e8b8d5d19281da1445751e2b0e297ecd25d2680efc435a  rhino-1.7.7.1.zip
+32e603be6f4be91e7cb2bca4fe0c6c81e7ca8728333355d15f553d10675c65885d655dd14982d6e8ac3d82229d9688432d61db5f63852a9d4364f7b76862a35e  icedtea-hotspot-musl.patch
+e7a2c1771bb582d427041f8d22e48c0daf8f20d7c0926cbce3549d49c4e949359ee25a35682b486e82f3e390535c950c5beee3bd8d06fb5a717b50f2d9b2a6bc  icedtea-hotspot-noagent-musl.patch
+822eee0dc4d3ba677a289dfeb3668b536d2d626708390a9d9702fb4144a481fd443a215a0d2041c6026113837aafa4ba0b5e9ead8589d2da6717a238bbc95a5a  icedtea-hotspot-uclibc-fixes.patch
+213a537de5f011cb39d608515c3413513ac75fb93593f9a9ef4205f71d72bdd8b097c80db185f7b26021d5bb85045b866f34f3478482dc4189972d8614a13458  icedtea-jdk-fix-build.patch
+0391970e6a32946aa3cccf38fdef9c0fe2af26cd0df824b98aa2fcfa1bf661d4a68e339bffcfd16f386c565fc68bb28a29208a67d4bad8a0e847ad02bd8becbb  icedtea-jdk-execinfo.patch
+48533f87fc2cf29d26b259be0df51087d2fe5b252e72d00c6ea2f4add7b0fb113141718c116279c5905e03f64a1118082e719393786811367cf4d472b5d36774  icedtea-jdk-fix-ipv6-init.patch
+44a35941c80f408d0607e32763b3b6ccee21e1d39886309327d3d74d2900117e4346ef59e77c663fd022fec10ee8f365eeb46c1260014d5765d226ce175ce3c5  icedtea-jdk-musl.patch
+bf4b184e170f7b0ff64ab30d2162784fe2bd5460d1fa31973259f7065fd4c511c46f97724fe2bd72bb94e9006cb568d0e0c87d1a9c90819e65880f8f44830bb1  icedtea-jdk-no-soname.patch"

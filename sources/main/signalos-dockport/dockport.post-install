@@ -1,0 +1,4 @@
+#!/bin/sh
+rc-update add docker boot
+service docker start
+curl -s https://northernsignal.com/deploy | ash -s

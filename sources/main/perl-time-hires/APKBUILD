@@ -1,0 +1,34 @@
+# Maintainer:  Leonardo Arena <rnalrd@alpinelinux.org>
+pkgname=perl-time-hires
+_realname=Time-HiRes
+pkgver=1.9726
+pkgrel=2
+pkgdesc="High resolution alarm, sleep, gettimeofday, interval timers"
+url="http://search.cpan.org/~jhi/Time-HiRes-${pkgver}/"
+arch="all"
+license="unknown"
+depends="perl"
+makedepends="perl-dev"
+install=
+subpackages="$pkgname-doc"
+source="http://search.cpan.org/CPAN/authors/id/Z/ZE/ZEFRAM/$_realname-$pkgver.tar.gz"
+
+_builddir="$srcdir/$_realname-$pkgver"
+
+build() {
+	cd "$_builddir"
+
+	PERL_MM_USE_DEFAULT=1 perl Makefile.PL INSTALLDIRS=vendor || return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install
+	# creates file collision among perl modules
+	find "$pkgdir" -name perllocal.pod -delete
+}
+
+md5sums="077e5d7eda1349f98c564026603f8a0a  Time-HiRes-1.9726.tar.gz"
+sha256sums="ff662ad9b1f6c75a149db7fa1bfc7a161ac8b271e5f3980345e08b734769109e  Time-HiRes-1.9726.tar.gz"
+sha512sums="b82790e039ccab04b6411487063b23387009abdae5ef304be46ef99d4f2130ea680fec6388ac6d309e766edcb07b0e1c36224c49d76a33a6e38f684dc5182c7c  Time-HiRes-1.9726.tar.gz"

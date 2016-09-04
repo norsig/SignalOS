@@ -1,0 +1,104 @@
+# Contributor: Francesco Colista <fcolista@alpinelinux.org>
+# Maintainer: Francesco Colista <fcolista@alpinelinux.org>
+pkgname=patchwork
+pkgver=1.1.1
+pkgrel=3
+pkgdesc="Web-based patch tracking system "
+url="http://jk.ozlabs.org/projects/patchwork/"
+arch="noarch"
+license="GPL"
+depends="py-django py-django-registration git py-psycopg2"
+depends_dev=""
+makedepends="$depends_dev"
+install=""
+subpackages="$pkgname-doc $pkgname-uwsgi-apache2:apache2_wsgi $pkgname-uwsgi-nginx:nginx_wsgi $pkgname-mysql
+	$pkgname-postgresql pwclient:pwclient"
+source="$pkgname-$pkgver.tar.gz::https://github.com/getpatchwork/$pkgname/archive/v$pkgver.tar.gz
+	0001-support-busybox-readlink.patch
+	0002-remove-uneeded-bashism-from-tools-and-change-path.patch
+	nginx-uwsgi-patchwork-conf.ini
+	nginx-patchwork.conf"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+prepare() {
+        local i
+        cd "$_builddir"
+        for i in $source; do
+                case $i in
+                *.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+                esac
+        done
+}
+
+build() {
+	cd "$_builddir"
+	return 0
+}
+
+package() {
+	cd "$_builddir"
+	mkdir -p "$pkgdir"/usr/share/webapps/$pkgname
+	install -Dm644 COPYING \
+		"$pkgdir"/usr/share/doc/$pkgname/COPYING || return 1
+	rm -f COPYING
+	install -Dm644 patchwork/settings/production.example.py \
+		"$pkgdir"/etc/$pkgname/production.py || return 1
+	mv * "$pkgdir"/usr/share/webapps/$pkgname
+	cd "$pkgdir"/usr/share/webapps/patchwork/patchwork/settings
+	ln -sf /etc/patchwork/production.py || return 1
+}
+
+apache2_wsgi() {
+	pkgdesc="$pkgname apache2 wsgi support"
+	depends="apache2 apache2-mod-wsgi"
+	replaces="$pkgname-apache2-wsgi"
+	install_if="$pkgname=$pkgver-r$pkgrel apache2-mod-wsgi"
+	install -Dm644 "$pkgdir"/usr/share/webapps/patchwork/lib/apache2/patchwork.wsgi.conf \
+		"$subpkgdir"/etc/apache2/conf.d/patchwork.wsgi.conf || return 1
+}
+
+nginx_wsgi() {
+	pkgdesc="$pkgname nginx wsgi support"
+	depends="nginx uwsgi-python"
+	replaces="$pkgname-nginx_wsgi"
+	install_if="nginx patchwork uwsgi"
+	install -Dm644 "$srcdir"/nginx-patchwork.conf \
+		"$subpkgdir"/etc/nginx/conf.d/patchwork.conf || return 1
+	install -Dm644 "$srcdir"/nginx-uwsgi-patchwork-conf.ini \
+		"$subpkgdir"/etc/uwsgi/conf.d/patchwork.ini || return 1
+}
+
+mysql() {
+	pkgdesc="$pkgname mysql support"
+	depends="py-mysqldb"
+	mkdir -p "$subpkgdir"
+}
+
+postgresql() {
+	pkgdesc="$pkgname postgresql support"
+	depends="py-psycopg2"
+	mkdir -p "$subpkgdir"
+}
+
+pwclient() {
+	pkgdesc="command-line client for patchwork"
+	depends="python"
+	install -Dm775 "$pkgdir"/usr/share/webapps/patchwork/patchwork/bin/pwclient \
+		"$subpkgdir"/usr/bin/pwclient || return 1
+}
+
+md5sums="9d665f68edc1afc6883873bb89dafe48  patchwork-1.1.1.tar.gz
+c0bf2a78294773e6a5dc5fb5c9b525cf  0001-support-busybox-readlink.patch
+2dde450ee27a24ea4b0448b1331e7cc9  0002-remove-uneeded-bashism-from-tools-and-change-path.patch
+f8807b30cceec56ec8428803a957537a  nginx-uwsgi-patchwork-conf.ini
+1ada6412b1e22c084a08563bf75637d0  nginx-patchwork.conf"
+sha256sums="e5bb8c453b2d042d13f87b51cba10360bd1d84ff181d6f2ee011c3b600c613f0  patchwork-1.1.1.tar.gz
+43159a12dbbd4161ae1476c38b5435517dbc7260a1e25aa6263038cc4c267b99  0001-support-busybox-readlink.patch
+499fc47ac715901fe0a5f5043f7ee722ab39e694451c70982830e1c728ea136d  0002-remove-uneeded-bashism-from-tools-and-change-path.patch
+d1d952c2c22d5d11256d17745fb9845d73ebef290982c671b48d1344b32431f6  nginx-uwsgi-patchwork-conf.ini
+1d869db2b0e11c8f0e57bc4e69ac6939cfaad759850ce072c6e349b2803633cc  nginx-patchwork.conf"
+sha512sums="2f2f9114a2185ca34d493a87d34f16cfb4bc05f4c6c261f533faa9cbaded7b77a37f202715668bb428462848733ff042a130271addb28f89445ad22e212376d7  patchwork-1.1.1.tar.gz
+a5d4e24741b66092a39c1ef4fdc76dffa1ddf87a69544ab0c374fb0701b0f7340a62ead86835d9bb412df5713f3ea3c0218e9e2e0cd01d9a1aad9414a3cc75fa  0001-support-busybox-readlink.patch
+12d1b184c6cb1d3f2c51adab6b60638e4869e055e677897bb66ee1a52312e77817bec543842324e2cbc2c226f3ab9d11c3782b5ef3a6f5f5712996cadbc6c9c9  0002-remove-uneeded-bashism-from-tools-and-change-path.patch
+28911a25e00a254237f7214fb681e5e984a2eae331e610be62967d5e246958e0f8d3f84861d8fd17c1190c1df72a25f28ddb33843b3679a3864beb00cb4b4961  nginx-uwsgi-patchwork-conf.ini
+862dd2522236a0b18d2a8d06f1ad91ad0fd0936fa502d95e09556641e67d42e1212821bfd7fb98923e4fe8b8a7369ded8c23831fb496b1e2833d9831c1b23725  nginx-patchwork.conf"

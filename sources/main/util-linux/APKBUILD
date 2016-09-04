@@ -1,0 +1,184 @@
+# Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Contributor: Leonardo Arena <rnalrd@alpinelinux.org>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=util-linux
+pkgver=2.28.1
+
+case $pkgver in
+	*.*.*) _v=${pkgver%.*};;
+	*.*) _v=$pkgver;;
+esac
+
+pkgrel=0
+pkgdesc="Random collection of Linux utilities"
+url="http://git.kernel.org/cgit/utils/util-linux/util-linux.git"
+arch="all"
+license="GPL2 GPL2+ LGPL2+ BSD Public Domain"
+depends="findmnt"
+# use GNU sed til bb sed is fixed. Also GNU tar is needed
+makedepends_build="sed tar autoconf automake libtool"
+makedepends_host="zlib-dev ncurses-dev linux-headers"
+install=
+options="suid"
+source="http://www.kernel.org/pub/linux/utils/$pkgname/v${_v}/$pkgname-$pkgver.tar.xz
+	libblkid-reduce-probing-area-for-crazy-CDROMs.patch
+	ttydefaults.h
+	"
+subpackages="$pkgname-doc $pkgname-dev $pkgname-bash-completion:bashcomp
+	libuuid libblkid libmount libsmartcols libfdisk sfdisk cfdisk
+	findmnt:_findmnt mcookie blkid"
+if [ -z "$BOOTSTRAP" ]; then
+	makedepends_host="$makedepends_host ncurses-dev python-dev"
+	subpackages="$subpackages py-libmount:_py"
+else
+	_bootstrap_config="--without-python"
+fi
+makedepends="$makedepends_build $makedepends_host"
+replaces="e2fsprogs util-linux-ng"
+
+_builddir="$srcdir/$pkgname-$pkgver"
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+	cp "$srcdir"/ttydefaults.h include/
+	libtoolize --force && aclocal -I m4 && autoconf \
+		&& automake --add-missing
+}
+
+build() {
+	cd "$_builddir"
+
+	# login utils are provided by shadow (with PAM) or busybox (no PAM) --nenolod
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--with-sysroot=$CBUILDROOT \
+		--prefix=/usr \
+		--enable-raw \
+		--with-ncurses \
+		--disable-uuidd \
+		--disable-nls \
+		--disable-tls \
+		--disable-kill \
+		--disable-login \
+		--disable-last \
+		--disable-sulogin \
+		--disable-su \
+		$_bootstrap_config \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make -j1 install DESTDIR="$pkgdir"
+	# use pkg-config
+}
+
+dev() {
+	default_dev
+	replaces="e2fsprogs-dev util-linux-ng-dev"
+}
+
+bashcomp() {
+	depends=""
+	pkgdesc="Bash completions for $pkgname"
+	install_if="$pkgname=$pkgver-r$pkgrel bash-completion"
+	arch="noarch"
+
+	mkdir -p "$subpkgdir"/usr/share/
+	mv "$pkgdir"/usr/share/bash-completion \
+		"$subpkgdir"/usr/share/ || return 1
+}
+
+blkid() {
+	pkgdesc="block device identification tool"
+	replaces="util-linux-ng"
+	depends=
+	mkdir -p "$subpkgdir"/sbin
+	mv "$pkgdir"/sbin/blkid "$subpkgdir"/sbin/
+}
+
+libuuid() {
+	pkgdesc="DCE compatible Universally Unique Identifier library"
+	depends=
+	mkdir -p "$subpkgdir"/lib
+	mv "$pkgdir"/lib/libuuid* "$subpkgdir"/lib/
+}
+
+libblkid() {
+	pkgdesc="Block device identification library from util-linux"
+	depends=
+	mkdir -p "$subpkgdir"/lib
+	mv "$pkgdir"/lib/libblkid* "$subpkgdir"/lib/
+}
+
+libmount() {
+	pkgdesc="Block device identification library from util-linux"
+	depends=
+	mkdir -p "$subpkgdir"/lib
+	mv "$pkgdir"/lib/libmount.so.* "$subpkgdir"/lib/
+}
+
+libsmartcols() {
+	pkgdesc="Formatting library for ls-like programs."
+	depends=
+	mkdir -p "$subpkgdir"/lib
+	mv "$pkgdir"/lib/libsmartcols.so.* "$subpkgdir"/lib/
+}
+
+libfdisk() {
+	pkgdesc="Partitioning library for fdisk-like programs"
+	depends=
+	mkdir -p "$subpkgdir"/lib
+	mv "$pkgdir"/lib/libfdisk.so.* "$subpkgdir"/lib/
+}
+
+sfdisk() {
+	pkgdesc="Partition table manipulator from util-linux"
+	depends=
+	mkdir -p "$subpkgdir"/sbin
+	mv "$pkgdir"/sbin/sfdisk "$subpkgdir"/sbin/
+}
+
+cfdisk() {
+	pkgdesc="Curses based partition table manipulator from util-linux"
+	depends=
+	mkdir -p "$subpkgdir"/sbin
+	mv "$pkgdir"/sbin/cfdisk "$subpkgdir"/sbin/
+}
+
+mcookie() {
+	pkgdesc="mcookie from util-linux"
+	replaces="util-linux-ng"
+	mkdir -p "$subpkgdir"/usr/bin
+	mv "$pkgdir"/usr/bin/mcookie "$subpkgdir"/usr/bin/
+}
+
+_findmnt() {
+	pkgdesc="findmnt from util-linux"
+	replaces=""
+	mkdir -p "$subpkgdir"/bin
+	mv "$pkgdir"/bin/findmnt "$subpkgdir"/bin
+}
+
+_py() {
+	pkgdesc="python bindings to libmount"
+	mkdir -p "$subpkgdir"/usr/lib
+	mv "$pkgdir"/usr/lib/python* "$subpkgdir"/usr/lib/
+}
+
+md5sums="e2d863efaf4fd330a42c5efe9f1b02b4  util-linux-2.28.1.tar.xz
+ee12cce6423e6f7ea4c9c438989e77d7  libblkid-reduce-probing-area-for-crazy-CDROMs.patch
+6196f1ce853dfaf717569c1e35555d6d  ttydefaults.h"
+sha256sums="3ece4ea4a34ef786b68f5c415e848390424232abd1ee00f7ee5bddc30657b60f  util-linux-2.28.1.tar.xz
+12b6434a229d08c81f45735cac50e9003908f3ad974c59cec93ddf57700077f3  libblkid-reduce-probing-area-for-crazy-CDROMs.patch
+46faf1198bd884d12c5d45019a5fec8dfdefeae6721d8c9f3da89921acdb2a6d  ttydefaults.h"
+sha512sums="58f2fdb1db6cf712dc8ca02550d17735cb0b5892b8151f26f5565cdaa6fe008207457c1d5b7d7c2a5b866ee86f4cf423b22911f63328e0ebd5cad7b197b53213  util-linux-2.28.1.tar.xz
+ec27d4227f7e0f08198ecf00f4c7da379ed588eb05835c318322bec26841868e51337c5710706237a7a3358aa0db6d4514c8f2444d02b2bd800f1c7f9e9570c2  libblkid-reduce-probing-area-for-crazy-CDROMs.patch
+876bb9041eca1b2cca1e9aac898f282db576f7860aba690a95c0ac629d7c5b2cdeccba504dda87ff55c2a10b67165985ce16ca41a0694a267507e1e0cafd46d9  ttydefaults.h"

@@ -1,0 +1,39 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=mpg123
+pkgver=1.23.6
+pkgrel=0
+pkgdesc="A console based real time MPEG Audio Player for Layer 1, 2 and 3"
+url="http://www.mpg123.org/"
+arch="all"
+license="GPL2 LGPL2"
+subpackages="$pkgname-dev $pkgname-doc"
+depends=""
+makedepends="libtool alsa-lib-dev linux-headers"
+source="http://www.mpg123.org/download/$pkgname-$pkgver.tar.bz2"
+options="libtool"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--disable-dependency-tracking \
+		--with-ipv6 \
+		--with-pic \
+		--with-optimization=0 \
+		--with-cpu=i386_fpu \
+		--with-audio="alsa oss" \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+md5sums="ed22a3e664f076fa05131a3454ef8166  mpg123-1.23.6.tar.bz2"
+sha256sums="4073d9c60a43872f6f5a3a322f5ea21ab7f0869d2ed25e79c3eb8521fa3c32d4  mpg123-1.23.6.tar.bz2"
+sha512sums="2fe11f921227c0866717c9268e7034d28a09086d96e3748188dcf41189238d8e605347f3200aa419031ca2975dc61ab9dfa51879e26f9a0d2f736a9c20089e3c  mpg123-1.23.6.tar.bz2"

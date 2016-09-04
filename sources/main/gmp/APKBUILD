@@ -1,0 +1,60 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=gmp
+pkgver=6.1.1
+pkgrel=0
+pkgdesc="A free library for arbitrary precision arithmetic"
+url="http://gmplib.org/"
+arch="all"
+license="LGPL3"
+makedepends="m4 texinfo libtool"
+depends=
+subpackages="$pkgname-doc $pkgname-dev libgmpxx"
+source="https://gmplib.org/download/gmp/gmp-$pkgver.tar.xz
+	"
+replaces="gmp5"
+_builddir="$srcdir"/gmp-${pkgver%[a-z]}
+
+prepare() {
+	cd "$_builddir"
+	# force update to libtool with fixed cross-build support
+	libtoolize -f || return 1
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--with-sysroot=$CBUILDROOT \
+		--prefix=/usr \
+		--infodir=/usr/share/info \
+		--mandir=/usr/share/man \
+		--localstatedir=/var/state/gmp \
+		--enable-cxx \
+		--with-pic \
+		|| return 1
+	make || return 1
+	if [ "$CBUILD" = "$CHOST" ]; then
+		make check || return 1
+	fi
+}
+
+package() {
+	cd "$_builddir"
+	make -j1 DESTDIR="${pkgdir}" install || return 1
+}
+
+libgmpxx() {
+	pkgdesc="C++ support for gmp"
+	mkdir -p "$subpkgdir"/usr/lib/
+	mv "$pkgdir"/usr/lib/libgmpxx.so.* "$subpkgdir"/usr/lib/
+}
+
+doc() {
+	default_doc
+	replaces="gmp5-doc"
+}
+
+md5sums="e70e183609244a332d80529e7e155a35  gmp-6.1.1.tar.xz"
+sha256sums="d36e9c05df488ad630fff17edb50051d6432357f9ce04e34a09b3d818825e831  gmp-6.1.1.tar.xz"
+sha512sums="6ead5fdf15891e0c47b094351497a052cc691973f09c60a8322546418eb615bddb180a93fd7846b88b096b5644cb9d375eab2a4a07af64399f5159eccf3edee2  gmp-6.1.1.tar.xz"

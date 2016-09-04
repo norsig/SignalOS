@@ -1,0 +1,42 @@
+# Contributor: ScrumpyJack <scrumpyjack@st.ilet.to>
+# Maintainer: ScrumpyJack <scrumpyjack@st.ilet.to>
+pkgname=netsurf
+pkgver=3.5
+pkgrel=0
+pkgdesc="NetSurf is a free, open source web browser."
+url="http://www.netsurf-browser.org"
+arch="all"
+license="GPL2"
+depends=""
+depends_dev=""
+makedepends="curl-dev openssl-dev doxygen flex bison libwebp-dev lcms2-dev \
+             libmng-dev gperf libglade-dev gtk+-dev libcurl libpng-dev \
+             check-dev libidn-dev libharu-dev librsvg-dev libjpeg-turbo-dev"
+install=""
+subpackages="$pkgname-doc"
+source="http://download.netsurf-browser.org/netsurf/releases/source-full/${pkgname}-all-${pkgver}.tar.gz
+       netsurf"
+
+builddir=${srcdir}/${pkgname}-all-${pkgver}
+build() {
+	cd "$builddir"
+        sed 's:-Werror::' -i libsvgtiny/Makefile
+        make PREFIX=/usr TARGET=gtk
+
+     }
+
+package() {
+	cd "$builddir"
+        make PREFIX=/usr TARGET=gtk DESTDIR="${pkgdir}" install
+        mv "$pkgdir/usr/bin/$pkgname" "$pkgdir/usr/bin/$pkgname.elf"
+        install -Dm755 "$srcdir/netsurf" "$pkgdir/usr/bin/$pkgname"
+        mkdir -p "$pkgdir"/usr/share/man/man1/
+        install -Dm644 netsurf/Docs/netsurf-gtk.1 "$pkgdir"/usr/share/man/man1/
+     }
+
+md5sums="a52270702637273f4ca3ea8b2347115d  netsurf-all-3.5.tar.gz
+59f2a4c36945cb339d8acd6e4f798338  netsurf"
+sha256sums="09184f8901a30b98b3e37e82d1d723a4f9e000c56b235ea59a9e0bb2d96fb4ed  netsurf-all-3.5.tar.gz
+0c35bcc46a16b8fa3a30289666c44506887f1a32520cf9cf522e71e0e4b5c38b  netsurf"
+sha512sums="a39eb8c11b394e4d5c1164da46d74f283f489057f70c192277d94e511a3716c86474a07a7c80ce602a53e41959f75e82312ad9f5cb365953c24445af4456e1ce  netsurf-all-3.5.tar.gz
+98d2319e31368b63afc01c82647e6d7bbc868775f8a26f0e65283509fb73f36b248a884d22822486402fb38fdf6cb463b2743d806c1edff32e358b4b444fde45  netsurf"

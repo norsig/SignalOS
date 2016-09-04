@@ -1,0 +1,42 @@
+# Contributor: Johannes Matheis <jomat+alpinebuild@jmt.gr>
+# Maintainer: Johannes Matheis <jomat+alpinebuild@jmt.gr>
+pkgname=i3lock
+pkgver=2.8
+pkgrel=0
+pkgdesc="An improved screenlocker based upon XCB and PAM"
+url="http://i3wm.org/i3lock/"
+arch="all"
+license="MIT"
+depends="xkeyboard-config"
+depends_dev="libev-dev cairo-dev linux-pam-dev libxkbcommon-dev xcb-util-image-dev"
+makedepends="$depends_dev"
+install=""
+subpackages="$pkgname-doc"
+source="$url/$pkgname-$pkgver.tar.bz2"
+
+builddir="$srcdir/$pkgname-$pkgver"
+prepare() {
+	default_prepare || return 1
+
+	cd "$builddir"
+	update_config_sub || return 1
+
+	# Fix ticket FS#31544, sed line taken from gentoo
+	sed -i -e 's:login:base-auth:g' i3lock.pam
+}
+
+build() {
+	cd "$builddir"
+	make || return 1
+}
+
+package() {
+	cd "$builddir"
+	make DESTDIR="$pkgdir" install || return 1
+	install -m755 -d "${pkgdir}/usr/share/man/man1/"
+	install -m644 ${pkgname}.1 "${pkgdir}/usr/share/man/man1/"
+}
+
+md5sums="89de7b7d46fdb05638122cf3c2512093  i3lock-2.8.tar.bz2"
+sha256sums="028fc0f74df10826514d5a4ed38f6895935d1f5d47ca9fcffc64b076aaf6e2f4  i3lock-2.8.tar.bz2"
+sha512sums="b0f2f2837e275ffb2874aec75cd5d7c69864f8861de5e3e6090a2bf9254a14f8bc141256b0faac3e30111f9612e97cc087efde0da939854fac975a87deb06e3f  i3lock-2.8.tar.bz2"

@@ -1,0 +1,144 @@
+# Contributor: William Pitcock <nenolod@dereferenced.org>
+# Maintainer: Timo Teräs <timo.teras@iki.fi>
+pkgname=musl
+pkgver=1.1.15
+pkgrel=2
+pkgdesc="the musl c library (libc) implementation"
+url="http://www.musl-libc.org/"
+arch="all"
+license="MIT"
+depends=""
+depends_dev="!uclibc-dev"
+makedepends="$depends_dev"
+subpackages="$pkgname-dev $pkgname-dbg libc6-compat:compat"
+[ "$BOOTSTRAP" != "nolibc" ] && subpackages="$subpackages $pkgname-utils"
+source="http://www.musl-libc.org/releases/musl-$pkgver.tar.gz
+	0001-fix-asctime-day-month-names-not-to-vary-by-locale.patch
+
+	ldconfig
+	__stack_chk_fail_local.c
+	getconf.c
+	getent.c
+	iconv.c
+	"
+
+builddir="$srcdir"/musl-$pkgver
+
+install_sysroot_headers() {
+	cd "$builddir"
+	[ -z "${CBUILDROOT}" ] && die "CBUILDROOT not set"
+	case "$CARCH" in
+	aarch64*) ARCH="aarch64" ;;
+	arm*) ARCH="arm" ;;
+	x86) ARCH="i386" ;;
+	x86_64) ARCH="x86_64" ;;
+	mips*) ARCH="mips" ;;
+	esac
+	make ARCH="$ARCH" prefix=/usr DESTDIR="${CBUILDROOT}" install-headers || return 1
+}
+
+build() {
+	cd "$builddir"
+
+	# provide minimal libssp_nonshared.a so we don't need libssp from gcc
+	${CROSS_COMPILE}gcc $CPPFLAGS $CFLAGS -c "$srcdir"/__stack_chk_fail_local.c -o __stack_chk_fail_local.o || return 1
+	${CROSS_COMPILE}ar r libssp_nonshared.a __stack_chk_fail_local.o || return 1
+
+	if [ "$BOOTSTRAP" != "nolibc" ]; then
+		# getconf/getent/iconv
+		local i
+		for i in getconf getent iconv ; do
+			${CROSS_COMPILE}gcc $CPPFLAGS $CFLAGS "$srcdir"/$i.c -o $i || return 1
+		done
+	fi
+
+	# note: not autotools
+	LDFLAGS="$LDFLAGS -Wl,-soname,libc.musl-${CARCH}.so.1" \
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--localstatedir=/var \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$builddir"
+	make DESTDIR="$pkgdir" install || return 1
+
+	cp libssp_nonshared.a "$pkgdir"/usr/lib || return 1
+
+	# make LDSO the be the real file, and libc the symlink
+	local LDSO=$(make -f Makefile --eval "$(echo -e 'print-ldso:\n\t@echo $$(basename $(LDSO_PATHNAME))')" print-ldso)
+	mv -f "$pkgdir"/usr/lib/libc.so "$pkgdir"/lib/"$LDSO" || return 1
+	ln -sf "$LDSO" "$pkgdir"/lib/libc.musl-${CARCH}.so.1 || return 1
+	ln -sf ../../lib/"$LDSO" "$pkgdir"/usr/lib/libc.so || return 1
+	mkdir -p "$pkgdir"/usr/bin || return 1
+	ln -sf ../../lib/"$LDSO" "$pkgdir"/usr/bin/ldd || return 1
+
+	# remove libintl.h, currently we don't want by default any NLS
+	# and use GNU gettext where needed. the plan is to migrate to
+	# musl gettext() later on as fully as possible.
+	rm "$pkgdir"/usr/include/libintl.h || return 1
+}
+
+utils() {
+	depends="!uclibc-utils scanelf"
+	replaces="libiconv uclibc-utils"
+	license="MIT BSD GPL2+"
+
+	mkdir -p "$subpkgdir"/usr "$subpkgdir"/sbin
+	mv "$pkgdir"/usr/bin "$subpkgdir"/usr/ || return 1
+
+	install -D \
+		"$builddir"/getent \
+		"$builddir"/getconf \
+		"$builddir"/iconv \
+		"$subpkgdir"/usr/bin
+
+	install -D -m755 "$srcdir"/ldconfig "$subpkgdir"/sbin
+}
+
+compat() {
+	pkgdesc="compatibility libraries for glibc"
+
+	case "$CARCH" in
+	arm*) _ld="ld-linux-armhf.so.3" ;;
+	x86) _ld="ld-linux.so.2" ;;
+	x86_64) _ld="ld-linux-x86-64.so.2" ;;
+	mips*) _ld="ld.so.1" ;;
+	esac
+
+	mkdir -p "$subpkgdir"/lib
+	ln -sf "/lib/libc.musl-${CARCH}.so.1" "$subpkgdir/lib/$_ld"
+
+	for i in libc.so.6 libcrypt.so.1 libm.so.6 libpthread.so.0 librt.so.1 libutil.so.1; do
+		ln -sf "/lib/libc.musl-${CARCH}.so.1" "$subpkgdir/lib/$i"
+	done
+}
+
+md5sums="9590a9d47ee64f220b3c12f7afb864ca  musl-1.1.15.tar.gz
+c08825383e41e5dbcd3ffdfd2062dd47  0001-fix-asctime-day-month-names-not-to-vary-by-locale.patch
+830d01f7821b978df770b06db3790921  ldconfig
+0df687757221bbb0fc1aa67f1bd646f9  __stack_chk_fail_local.c
+57ef2c63b9ec6a2041694ace97d4ffa2  getconf.c
+2b941c4251cac44988a4abfc50e21267  getent.c
+45f92f8d59cf84d765de698a9578dbf4  iconv.c"
+sha256sums="97e447c7ee2a7f613186ec54a93054fe15469fe34d7d323080f7ef38f5ecb0fa  musl-1.1.15.tar.gz
+d157100aeed5b0866eb6d50288f63f26ea9900f1d4c7b8a1492294c912b5cc19  0001-fix-asctime-day-month-names-not-to-vary-by-locale.patch
+b4a2c06db38742e8c42c3c9838b285a7d8cdac6c091ff3df5ff9a15f1e41b9c7  ldconfig
+299a7d75a09de3e2e11e7fb4acc3182e4a14e868093d2f30938fce9bfcff13da  __stack_chk_fail_local.c
+d87d0cbb3690ae2c5d8cc218349fd8278b93855dd625deaf7ae50e320aad247c  getconf.c
+68373a55e89ce85c562d941ccf588337d6cc6c9c17689d695f65cd7607134bbe  getent.c
+f79a2930a2e5bb0624321589edf8b889d1e9b603e01e6b7ae214616605b3fdd7  iconv.c"
+sha512sums="9e923572c0d6bad3dc2d2646d4b0699c10b477ce6300ac6c6224895192a90667f581ddf6eda2ab8c4c16f47bde4bccb03bb90478638d136d9df721430f4d0163  musl-1.1.15.tar.gz
+1a74d5f5e0f6f2fe6029ed0f18b4603f80c990f19aa13d83c5d1f40f032b2ffb3819aae13ae1f96415bb08571774eec164e71d09028f2a5db4ae9b77e48cafe7  0001-fix-asctime-day-month-names-not-to-vary-by-locale.patch
+8d3a2d5315fc56fee7da9abb8b89bb38c6046c33d154c10d168fb35bfde6b0cf9f13042a3bceee34daf091bc409d699223735dcf19f382eeee1f6be34154f26f  ldconfig
+062bb49fa54839010acd4af113e20f7263dde1c8a2ca359b5fb2661ef9ed9d84a0f7c3bc10c25dcfa10bb3c5a4874588dff636ac43d5dbb3d748d75400756d0b  __stack_chk_fail_local.c
+0d80f37b34a35e3d14b012257c50862dfeb9d2c81139ea2dfa101d981d093b009b9fa450ba27a708ac59377a48626971dfc58e20a3799084a65777a0c32cbc7d  getconf.c
+b35de9847353b273516162ed4828a810c6130fc5b7de44ee4433003b3f99647b25792d9b1c40dfc67069add11f3fb850e5c35d4f1912dccac108059bbbdfd5a2  getent.c
+9d42d66fb1facce2b85dad919be5be819ee290bd26ca2db00982b2f8e055a0196290a008711cbe2b18ec9eee8d2270e3b3a4692c5a1b807013baa5c2b70a2bbf  iconv.c"

@@ -1,0 +1,210 @@
+# Contributor: Michael Mason <ms13sp@gmail.com>
+# Maintainer: Marlus Saraiva <marlus.saraiva@gmail.com>
+
+pkgname=erlang
+pkgver=19.0.1
+_srcver=19.0
+pkgrel=0
+pkgdesc="General-purpose programming language and runtime environment"
+url="http://www.erlang.org/"
+license="ASL 2.0"
+arch="all"
+depends="$pkgname-kernel $pkgname-stdlib $pkgname-compiler"
+makedepends="perl-dev zlib-dev ncurses-dev openssl-dev openjdk7 unixodbc-dev"
+install=""
+subpackages="$pkgname-dev
+             $pkgname-asn1:asn
+	     $pkgname-common-test:common_test
+	     $pkgname-compiler:compiler
+	     $pkgname-cosevent:cos_event
+	     $pkgname-coseventdomain:cos_event_domain
+	     $pkgname-cosfiletransfer:cos_file_transfer
+	     $pkgname-cosnotification:cos_notification
+	     $pkgname-cosproperty:cos_property
+	     $pkgname-costime:cos_time
+	     $pkgname-costransaction:cos_transactions
+	     $pkgname-crypto:crypto
+	     $pkgname-debugger:debugger
+	     $pkgname-dialyzer:dialyzer
+	     $pkgname-diameter:diameter
+	     $pkgname-edoc:edoc
+	     $pkgname-eldap:eldap
+	     $pkgname-erl-docgen:erl_docgen
+	     $pkgname-erl-interface:erl_interface
+	     $pkgname-erts:erts
+	     $pkgname-et:et
+	     $pkgname-eunit:eunit
+	     $pkgname-gs:gs
+	     $pkgname-hipe:hipe
+	     $pkgname-ic:ic
+	     $pkgname-inets:inets
+	     $pkgname-jinterface:jinterface
+	     $pkgname-kernel:kernel
+	     $pkgname-megaco:megaco
+	     $pkgname-mnesia:mnesia
+	     $pkgname-observer:observer
+	     $pkgname-odbc:odbc
+	     $pkgname-orber:orber
+	     $pkgname-os-mon:os_mon
+	     $pkgname-otp-mibs:otp_mibs
+	     $pkgname-parsetools:parsetools
+	     $pkgname-percept:percept
+	     $pkgname-public-key:public_key
+	     $pkgname-reltool:reltool
+	     $pkgname-runtime-tools:runtime_tools
+	     $pkgname-sasl:sasl
+	     $pkgname-snmp:snmp
+	     $pkgname-ssh:ssh
+	     $pkgname-ssl:ssl
+	     $pkgname-stdlib:stdlib
+	     $pkgname-syntax-tools:syntax_tools
+	     $pkgname-tools:tools
+	     $pkgname-typer:typer
+	     $pkgname-xmerl:xmerl"
+source="http://www.erlang.org/download/otp_src_$_srcver.tar.gz
+        0005-Do-not-install-nteventlog-and-related-doc-files-on-n.patch
+        0010-fix-nteventlog-remove.patch
+        0015-otp-update-version-19.0.1.patch"
+
+_builddir="$srcdir"/otp_src_$_srcver
+
+prepare() {
+	local i
+	cd "$_builddir"
+	rm lib/os_mon/ebin/*
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	export CPPFLAGS="-D_BSD_SOURCE $CPPFLAGS"
+	export PATH="/usr/lib/jvm/java-1.7-openjdk/bin:$PATH"
+	./configure --prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--host="$CHOST" \
+		--build="$CBUILD" \
+		--enable-threads \
+		--enable-shared-zlib \
+		--enable-ssl=dynamic-ssl-lib \
+		--disable-hipe \
+		|| return 1
+	make -j1 || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make -j1 DESTDIR="$pkgdir" install || return 1
+	rm -rf "$pkgdir"/usr/lib/erlang/lib/wx-*
+}
+
+_mv_erlang_lib() {
+	local lib=$1
+	depends="$pkgname"
+
+	mkdir -p "$subpkgdir"/usr/lib/erlang/lib
+        rm -f "$pkgdir"/usr/lib/erlang/lib/$lib-*/src/*.erl
+	mv "$pkgdir"/usr/lib/erlang/lib/$lib-* "$subpkgdir"/usr/lib/erlang/lib/
+}
+
+asn() { _mv_erlang_lib asn1; }
+common_test() { _mv_erlang_lib common_test; }
+compiler() { _mv_erlang_lib compiler; }
+cos_event() { _mv_erlang_lib cosEvent; }
+cos_event_domain() { _mv_erlang_lib cosEventDomain; }
+cos_file_transfer() { _mv_erlang_lib cosFileTransfer; }
+cos_notification() { _mv_erlang_lib cosNotification; }
+cos_property() { _mv_erlang_lib cosProperty; }
+cos_time() { _mv_erlang_lib cosTime; }
+cos_transactions() { _mv_erlang_lib cosTransactions; }
+crypto() { _mv_erlang_lib crypto; }
+debugger() { _mv_erlang_lib debugger; }
+dialyzer() { _mv_erlang_lib dialyzer; }
+diameter() { _mv_erlang_lib diameter; }
+edoc() { _mv_erlang_lib edoc; }
+eldap() { _mv_erlang_lib eldap; }
+erl_docgen() { _mv_erlang_lib erl_docgen; }
+erl_interface() { _mv_erlang_lib erl_interface; }
+erts() { _mv_erlang_lib erts; }
+et() { _mv_erlang_lib et; }
+eunit() { _mv_erlang_lib eunit; }
+gs() { _mv_erlang_lib gs; }
+hipe() { _mv_erlang_lib hipe; }
+ic() { _mv_erlang_lib ic; }
+inets() { _mv_erlang_lib inets; }
+jinterface() { _mv_erlang_lib jinterface; }
+kernel() { _mv_erlang_lib kernel; }
+megaco() { _mv_erlang_lib megaco; }
+mnesia() { _mv_erlang_lib mnesia; }
+observer() { _mv_erlang_lib observer; }
+odbc() { _mv_erlang_lib odbc; }
+orber() { _mv_erlang_lib orber; }
+os_mon() { _mv_erlang_lib os_mon; }
+otp_mibs() { _mv_erlang_lib otp_mibs; }
+parsetools() { _mv_erlang_lib parsetools; }
+percept() { _mv_erlang_lib percept; }
+public_key() { _mv_erlang_lib public_key; }
+reltool() { _mv_erlang_lib reltool; }
+runtime_tools() { _mv_erlang_lib runtime_tools; }
+sasl() { _mv_erlang_lib sasl; }
+snmp() { _mv_erlang_lib snmp; }
+ssh() { _mv_erlang_lib ssh; }
+ssl() { _mv_erlang_lib ssl; }
+stdlib() { _mv_erlang_lib stdlib; }
+syntax_tools() { _mv_erlang_lib syntax_tools; }
+tools() { _mv_erlang_lib tools; }
+typer() { _mv_erlang_lib typer; }
+xmerl() { _mv_erlang_lib xmerl; }
+
+dev() {
+	local i= j=
+	depends="$pkgname=$pkgver-r$pkgrel $depends_dev"
+	pkgdesc="$pkgdesc (development files)"
+
+	cd "$pkgdir" || return 0
+	local libdirs=usr/
+	[ -d lib/ ] && libdirs="lib/ $libdirs"
+	for i in usr/include usr/lib/pkgconfig usr/share/aclocal\
+			usr/share/gettext usr/bin/*-config	\
+			usr/share/vala/vapi usr/share/gir-[0-9]*\
+			usr/share/qt*/mkspecs			\
+			usr/lib/qt*/mkspecs			\
+			usr/lib/cmake				\
+			$(find . -name include -type d) 	\
+			$(find $libdirs -name '*.[acho]' \
+				-o -name '*.prl' 2>/dev/null); do
+		if [ -e "$pkgdir/$i" ] || [ -L "$pkgdir/$i" ]; then
+			d="$subpkgdir/${i%/*}"	# dirname $i
+			mkdir -p "$d"
+			mv "$pkgdir/$i" "$d"
+			rmdir "$pkgdir/${i%/*}" 2>/dev/null
+		fi
+	done
+	# move *.so links needed when linking the apps to -dev packages
+	for i in lib/*.so usr/lib/*.so; do
+		if [ -L "$i" ]; then
+			mkdir -p "$subpkgdir"/"${i%/*}"
+			mv "$i" "$subpkgdir/$i" || return 1
+		fi
+	done
+	return 0
+}
+	
+
+md5sums="f64eefc697d47193444aa224d971f367  otp_src_19.0.tar.gz
+f4aa0cc27dc57ea4dcd57191b1948a4d  0005-Do-not-install-nteventlog-and-related-doc-files-on-n.patch
+0dd300003ff68fc46dc3c839c2541d53  0010-fix-nteventlog-remove.patch
+d706bb0d2b3fbd937c6a0e3e54a15dee  0015-otp-update-version-19.0.1.patch"
+sha256sums="3fdc27a2a826e7f3d9cda43302d27d98704d6b41ce29a8a5df747a161da53bb1  otp_src_19.0.tar.gz
+71c8a55fe036d5a04ba2c008b51d8950c3f18d83edaffb9bef2a9d19dd2f79f3  0005-Do-not-install-nteventlog-and-related-doc-files-on-n.patch
+019c62ea3fee60068caa8c3152d7f96e76591fc5dc096abfcea48ec1593eb758  0010-fix-nteventlog-remove.patch
+5d523de091a5eff46b4ab7000b09d3668f9e3949b8b04c7d7c1b36936e6cda95  0015-otp-update-version-19.0.1.patch"
+sha512sums="fdab82883f7be04cca91041819d15e0b065bdd049b134d056fe4ea12657f1c6f77aeebd778c09b4064e6d974734fe087592739181e14fe60597dbe37f492684f  otp_src_19.0.tar.gz
+923addcb1f6472829ba13ccc91ad3cef161f269478404f0a19bc4997118e06edd7459011a60769eb393eac930f30d4bd6c5526301382a5f9815862237f4664d3  0005-Do-not-install-nteventlog-and-related-doc-files-on-n.patch
+b7387f92f8c27a0565c7885bba4b357183c62d422616e073bc5ffad338a0e22cb5165dcb3b95bf0b920ba00831599f2216027883f4be255aa6f6150b68b7a37c  0010-fix-nteventlog-remove.patch
+bbacccc2a4b85ab4c1a6a24db70b8e4ae6ddd5f2b8b3c6c3ce1c767ff2881bb35a7f6adac973ecb4469149f658ab924825ec295efe8f41fb00229db526cb4ac3  0015-otp-update-version-19.0.1.patch"

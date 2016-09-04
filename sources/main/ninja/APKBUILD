@@ -1,0 +1,48 @@
+# Contributor: k0r10n <k0r10n.dev@gmail.com>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=ninja
+pkgver=1.6.0
+pkgrel=0
+pkgdesc="Small build system with a focus on speed"
+url="http://martine.github.io/ninja/"
+arch="all"
+license="Apache"
+depends=""
+depends_dev=""
+makedepends="$depends_dev asciidoc python re2c gtest"
+install=""
+subpackages="$pkgname-doc"
+source="$pkgname-$pkgver.tar.gz::https://github.com/martine/ninja/archive/v$pkgver.tar.gz"
+
+_builddir="$srcdir"/${pkgname}-${pkgver}
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	python2 ./bootstrap.py || return 1
+	asciidoc doc/manual.asciidoc || return 1
+}
+
+package() {
+	cd "$_builddir"
+	install -m755 -D ninja "$pkgdir/usr/bin/ninja" || return 1
+	install -m644 -D doc/manual.asciidoc \
+		"$pkgdir/usr/share/doc/ninja/manual.asciidoc" || return 1
+	install -m644 -D doc/manual.html \
+		"$pkgdir/usr/share/doc/ninja/manual.html" || return 1
+	
+	install -m644 -D misc/bash-completion \
+		"$pkgdir/usr/share/bash-completion/completions/ninja" || return 1
+}
+
+md5sums="254133059f2da79d8727f654d7198f43  ninja-1.6.0.tar.gz"
+sha256sums="b43e88fb068fe4d92a3dfd9eb4d19755dae5c33415db2e9b7b61b4659009cde7  ninja-1.6.0.tar.gz"
+sha512sums="551a9e14b95c2d2ddad6bee0f939a45614cce86719748dc580192dd122f3671e3d95fd6a6fb3facb2d314ba100d61a004af4df77f59df119b1b95c6fe8c38875  ninja-1.6.0.tar.gz"

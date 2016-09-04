@@ -1,0 +1,65 @@
+--- mdocml-1.13.4/Makefile.orig
++++ mdocml-1.13.4/Makefile
+@@ -311,9 +311,13 @@
+ WWW_OBJS	 = mdocml.tar.gz \
+ 		   mdocml.sha256
+ 
++LIBMANDOC        = libmandoc.so
++MANDOCLIB        = -L. -lmandoc
++
+ # === USER CONFIGURATION ===============================================
+ 
+ include Makefile.local
++CFLAGS           += -fPIC
+ 
+ # === DEPENDENCY HANDLING ==============================================
+ 
+@@ -340,7 +344,7 @@
+ 	rm -f Makefile.local config.h config.h.old config.log config.log.old
+ 
+ clean:
+-	rm -f libmandoc.a $(LIBMANDOC_OBJS) $(COMPAT_OBJS)
++	rm -f $(LIBMANDOC) $(LIBMANDOC_OBJS) $(COMPAT_OBJS)
+ 	rm -f mandoc $(BASE_OBJS) $(DB_OBJS)
+ 	rm -f man.cgi $(CGI_OBJS)
+ 	rm -f manpage $(MANPAGE_OBJS)
+@@ -360,7 +364,7 @@
+ 	$(INSTALL_PROGRAM) mandoc demandoc $(DESTDIR)$(BINDIR)
+ 	$(INSTALL_PROGRAM) soelim $(DESTDIR)$(BINDIR)/$(BINM_SOELIM)
+ 	ln -f $(DESTDIR)$(BINDIR)/mandoc $(DESTDIR)$(BINDIR)/$(BINM_MAN)
+-	$(INSTALL_LIB) libmandoc.a $(DESTDIR)$(LIBDIR)
++	$(INSTALL_LIB) $(LIBMANDOC) $(DESTDIR)$(LIBDIR)
+ 	$(INSTALL_LIB) man.h mandoc.h mandoc_aux.h mdoc.h roff.h \
+ 		$(DESTDIR)$(INCLUDEDIR)
+ 	$(INSTALL_MAN) mandoc.1 demandoc.1 $(DESTDIR)$(MANDIR)/man1
+@@ -405,20 +409,20 @@
+ 	@echo "$@ is out of date; please run ./configure"
+ 	@exit 1
+ 
+-libmandoc.a: $(COMPAT_OBJS) $(LIBMANDOC_OBJS)
+-	ar rs $@ $(COMPAT_OBJS) $(LIBMANDOC_OBJS)
++libmandoc.so: $(COMPAT_OBJS) $(LIBMANDOC_OBJS)
++	$(CC) $(LDFLAGS) -shared -o $@ $(COMPAT_OBJS) $(LIBMANDOC_OBJS) $(LDADD)
+ 
+-mandoc: $(MAIN_OBJS) libmandoc.a
+-	$(CC) -o $@ $(LDFLAGS) $(MAIN_OBJS) libmandoc.a $(LDADD)
++mandoc: $(MAIN_OBJS) $(LIBMANDOC)
++	$(CC) -o $@ $(LDFLAGS) $(MAIN_OBJS) $(MANDOCLIB) $(LDADD)
+ 
+-manpage: $(MANPAGE_OBJS) libmandoc.a
+-	$(CC) -o $@ $(LDFLAGS) $(MANPAGE_OBJS) libmandoc.a $(LDADD)
++manpage: $(MANPAGE_OBJS) $(LIBMANDOC)
++	$(CC) -o $@ $(LDFLAGS) $(MANPAGE_OBJS) $(MANDOCLIB) $(LDADD)
+ 
+-man.cgi: $(CGI_OBJS) libmandoc.a
+-	$(CC) $(STATIC) -o $@ $(LDFLAGS) $(CGI_OBJS) libmandoc.a $(LDADD)
++man.cgi: $(CGI_OBJS) $(LIBMANDOC)
++	$(CC) $(STATIC) -o $@ $(LDFLAGS) $(CGI_OBJS) $(MANDOCLIB) $(LDADD)
+ 
+-demandoc: $(DEMANDOC_OBJS) libmandoc.a
+-	$(CC) -o $@ $(LDFLAGS) $(DEMANDOC_OBJS) libmandoc.a $(LDADD)
++demandoc: $(DEMANDOC_OBJS) $(LIBMANDOC)
++	$(CC) -o $@ $(LDFLAGS) $(DEMANDOC_OBJS) $(MANDOCLIB) $(LDADD)
+ 
+ soelim: $(SOELIM_OBJS)
+ 	$(CC) -o $@ $(LDFLAGS) $(SOELIM_OBJS)

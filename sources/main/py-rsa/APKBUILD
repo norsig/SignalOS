@@ -1,0 +1,40 @@
+# Maintainer: Peter Bui <pnutzh4x0r@gmail.com>
+pkgname=py-rsa
+_pkgname=rsa
+pkgver=3.2.3
+pkgrel=0
+pkgdesc="Pure-Python RSA implementation"
+url="http://stuvel.eu/rsa"
+arch="noarch"
+license="BSD"
+depends="python py-asn1"
+depends_dev=""
+makedepends="python-dev py-setuptools"
+install=""
+subpackages=""
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz"
+
+_builddir="$srcdir"/$_pkgname-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	python setup.py build || return 1
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py install --prefix=/usr --root="$pkgdir" || return 1
+}
+
+md5sums="0e93ca942184650116d84452d4b90253  rsa-3.2.3.tar.gz"
+sha256sums="14db288cc40d6339dedf60d7a47053ab004b4a8976a5c59402a211d8fc5bf21f  rsa-3.2.3.tar.gz"
+sha512sums="52b33e0278e6e1fed64b1cdebed29f7caa31fae733c2d5875e6cba5a045aaa829616799d8de84fdb63c546780dbdafcabf1f85f25930b8e663861151479ef7e2  rsa-3.2.3.tar.gz"

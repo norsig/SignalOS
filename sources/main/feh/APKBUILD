@@ -1,0 +1,31 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=feh
+pkgver=2.17
+pkgrel=0
+pkgdesc="feh is a fast, lightweight image viewer which uses imlib2"
+url="http://feh.finalrewind.org/"
+arch="all"
+license="MIT"
+subpackages="$pkgname-doc"
+depends=
+makedepends="libxt-dev libpng-dev giblib-dev imlib2-dev libjpeg-turbo-dev 
+	libxinerama-dev curl-dev"
+source="https://feh.finalrewind.org/$pkgname-$pkgver.tar.bz2"
+
+builddir="$srcdir/$pkgname-$pkgver"
+build() {
+	make PREFIX=/usr -C "$builddir" || return 1
+}
+
+package() {
+	make PREFIX=/usr DESTDIR="$pkgdir" \
+		bin_dir="$pkgdir"/usr/bin \
+		man_dir="$pkgdir"/usr/share/man \
+		doc_dir="$pkgdir"/usr/share/doc/$pkgname \
+		example_dir="$pkgdir"/usr/share/doc/$pkgname/examples \
+		-C "$builddir" install || return 1
+}
+
+md5sums="689ed371e668628510eafeaeff1040dc  feh-2.17.tar.bz2"
+sha256sums="dfe6fd362a988eba964de3eb1ecc083cfbdf5132ade36e68b6f18e07a78980d4  feh-2.17.tar.bz2"
+sha512sums="64b347766b2d39dcd275eb40a10d82ef65fa323485be6be0f25f300995e79739725b512f2a97971a68a2d8fb690ba023957d0125c39367c32af009e9a702c2c3  feh-2.17.tar.bz2"

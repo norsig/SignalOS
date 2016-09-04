@@ -1,0 +1,48 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=xf86-video-ati
+pkgver=7.7.0
+pkgrel=0
+pkgdesc="ATI video driver"
+url="http://xorg.freedesktop.org/"
+arch="all"
+license="custom"
+subpackages="$pkgname-doc"
+depends="mesa-dri-ati"
+makedepends="xorg-server-dev libxi-dev fontsproto randrproto
+	videoproto renderproto libdrm-dev xf86driproto glproto mesa-dev
+	xineramaproto eudev-dev pixman-dev
+	"
+
+source="http://xorg.freedesktop.org/releases/individual/driver/$pkgname-$pkgver.tar.bz2
+	"
+
+prepare() {
+	cd "$srcdir"/$pkgname-$pkgver
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$srcdir"/$pkgname-$pkgver
+	export LDFLAGS="$LDFLAGS -Wl,-z,lazy"
+
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--disable-glamor \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$srcdir"/$pkgname-$pkgver
+	make DESTDIR="$pkgdir" install || return 1
+	install -Dm644 COPYING "$pkgdir"/usr/share/licenses/$pkgname/COPYING
+}
+md5sums="59bfe0feba875c5cd28b03766aaa3b98  xf86-video-ati-7.7.0.tar.bz2"
+sha256sums="844d1c577b145c90dc8ef027678f0c27f554363f782cd696a3aea26415b2c1c3  xf86-video-ati-7.7.0.tar.bz2"
+sha512sums="002ae681c35c8293d7b11b1fe7ec7fad569a18bcb2091ae54e682de3878ffc681780d802a450f51cf4bcb81a7f137fb6b1c739c467e8f15f4ab8640fb2e472df  xf86-video-ati-7.7.0.tar.bz2"

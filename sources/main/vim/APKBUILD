@@ -1,0 +1,66 @@
+# Contributor: Łukasz Jendrysik <scadu@yandex.com>
+# Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=vim
+pkgver=7.4.2028
+pkgrel=0
+pkgdesc="advanced text editor"
+url="http://www.vim.org"
+arch="all"
+license="custom"
+depends=""
+makedepends="ncurses-dev lua5.2-dev python3-dev"
+subpackages="$pkgname-doc ${pkgname}diff"
+source="$pkgname-$pkgver.tar.gz::https://github.com/$pkgname/$pkgname/archive/v$pkgver.tar.gz
+	vimrc
+	"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+prepare() {
+	cd "$_builddir"
+	# Read vimrc from /etc/vim
+	echo '#define SYS_VIMRC_FILE "/etc/vim/vimrc"' >> src/feature.h
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--enable-luainterp \
+		--enable-python3interp=dynamic \
+		--without-x \
+		--disable-nls \
+		--enable-multibyte \
+		--enable-gui=no \
+		--with-lua-prefix=/usr/lua5.2 \
+		--with-compiledby="Alpine Linux" \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make -j1 DESTDIR="$pkgdir/" install
+
+	install -Dm644 runtime/doc/uganda.txt \
+		"$pkgdir/usr/share/licenses/$pkgname/LICENSE" || return 1
+	install -Dm644 "$srcdir"/vimrc "$pkgdir"/etc/vim/vimrc || return 1
+}
+
+vimdiff() {
+	pkgdesc="view file diffs in vim"
+	arch="noarch"
+	depends="diffutils"
+
+	install -d "$subpkgdir"/usr/bin || return 1
+	mv "$pkgdir"/usr/bin/vimdiff "$subpkgdir"/usr/bin
+}
+
+md5sums="8001096980afe33b3ca72a4eea868454  vim-7.4.2028.tar.gz
+97aecde2ab504e543a96bec84b3b5638  vimrc"
+sha256sums="e37f585fd43a912fffc5b94a8437c2f10cf4ab179eec04c6749937f6c314ad37  vim-7.4.2028.tar.gz
+7ac7e5fd75fe315fd8b3ca4172056ebb9f06df0b5985d3ff88133dfcdd87076b  vimrc"
+sha512sums="e3f0243947897b06d796f58d1c9dfa7c1abdb6c74d03ae6b371e49dd3ab7b01182656a89a874640561ac6d0a78bc5dfb787cf068180e88a69319c84341c6764a  vim-7.4.2028.tar.gz
+d9586b777881973cb5e48e18750336a522ed72c3127b2d6b6991e2b943468ca5b694476e7fa39ab469178c1375fc8f52627484e0fe377aea5811a513e35a7b02  vimrc"

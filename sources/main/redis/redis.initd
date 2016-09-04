@@ -1,0 +1,52 @@
+#!/sbin/openrc-run
+
+REDIS_CONF=${REDIS_CONF:-/etc/redis.conf}
+REDIS_USER=${REDIS_USER:-redis}
+REDIS_GROUP=${REDIS_GROUP:-redis}
+
+name="Redis server"
+command=/usr/bin/redis-server
+command_args=${REDIS_CONF}
+
+depend() {
+	use net localmount logger
+	after keepalived firewall
+}
+
+# get global pidfile, logfile, and dir from config file
+get_config() {
+	if [ ! -f "${REDIS_CONF}" ] ; then
+		eerror "You need a ${REDIS_CONF} file to run redis"
+		return 1;
+	fi
+	
+	pidfile=$(awk '$1 == "pidfile" { print $2 }' "$REDIS_CONF")
+	logfile=$(awk '$1 == "logfile" { print $2 }' "$REDIS_CONF")
+	dir=$(awk '$1 == "dir" { print $2 }' "$REDIS_CONF")
+	: ${pidfile:=/var/run/redis/redis.pid}
+	: ${logfile:=/var/log/redis/redis.log}
+	: ${dir:=/var/lib/redis}
+}
+
+start() {
+	get_config || return 1
+	checkpath -d -o ${REDIS_USER}:${REDIS_GROUP} ${pidfile%/*} \
+		${logfile%/*} ${dir}
+
+	ebegin "Starting $name"
+	start-stop-daemon --start \
+		--chdir "${dir}" \
+		--user ${REDIS_USER}:${REDIS_GROUP} \
+		--pidfile "${pidfile}" \
+		--exec "${command}" \
+		-- ${command_args}
+	eend $? 
+}
+
+stop() {
+	get_config
+	ebegin "Stopping $name"
+	start-stop-daemon --stop --retry 30 --pidfile "${pidfile}"
+	eend $?
+}
+

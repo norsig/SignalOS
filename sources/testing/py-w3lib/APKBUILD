@@ -1,0 +1,41 @@
+# Contributor: Fabian Affolter <fabian@affolter-engineering.ch>
+# Maintainer: Fabian Affolter <fabian@affolter-engineering.ch>
+pkgname=py-w3lib
+_pkgname=w3lib
+pkgver=1.10.0
+pkgrel=0
+pkgdesc="A library of web-related functions"
+url="https://github.com/scrapy/w3lib"
+arch="noarch"
+license="BSD"
+depends="python"
+depends_dev=""
+makedepends="python-dev py-setuptools"
+install=""
+subpackages=""
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz"
+
+_builddir="$srcdir"/$_pkgname-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	python setup.py build || return 1
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py install --prefix=/usr --root="$pkgdir" || return 1
+}
+
+md5sums="4188d2dbc790dd07c6b3877dcd0ebd7b  w3lib-1.10.0.tar.gz"
+sha256sums="670cd9647dfc9f5adbf973c300bc62f3ba6687acfed93b67527f4cca5459380b  w3lib-1.10.0.tar.gz"
+sha512sums="9f17083b57b3363c4eb656d46b87a122c3dcac0a58bf4f9fd9aab7d28776931d16eb9b5c7f267cfeb8e7f52d695e9b22f5f83b724fd671a70073325972088b2f  w3lib-1.10.0.tar.gz"

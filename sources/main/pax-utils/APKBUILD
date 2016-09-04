@@ -1,0 +1,41 @@
+# Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=pax-utils
+pkgver=1.1.6
+pkgrel=0
+pkgdesc="ELF related utils for ELF 32/64 binaries"
+url="https://wiki.gentoo.org/wiki/Hardened/PaX_Utilities"
+arch="all"
+license="GPL2"
+depends="scanelf"
+makedepends_build=""
+makedepends_host="linux-headers libcap-dev"
+makedepends="$makedepends_build $makedepends_host"
+source="http://distfiles.gentoo.org/distfiles/${pkgname}-${pkgver}.tar.xz"
+subpackages="$pkgname-doc scanelf:_scanelf"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+build() {
+	cd "$_builddir"
+	make USE_CAP=yes || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir/" install || return 1
+
+	# Don't conflict with main/lddtree
+	rm -f "$pkgdir"/usr/bin/lddtree
+}
+
+_scanelf() {
+	pkgdesc="Scan ELF binaries for stuff"
+	depends=
+	replaces="pax-utils"
+	mkdir -p "$subpkgdir"/usr/bin
+	mv "$pkgdir"/usr/bin/scanelf "$subpkgdir"/usr/bin/
+}
+
+md5sums="96f56a5a10ed50f2448c5ccebd27764f  pax-utils-1.1.6.tar.xz"
+sha256sums="f5436c517bea40f7035ec29a6f34034c739b943f2e3a080d76df5dfd7fd41b12  pax-utils-1.1.6.tar.xz"
+sha512sums="c5bdb3ee076c5f4d026f811a59329014c539e3bb3ab45aec92564dcc4abcedaebc50bec55c37aeccfe9e31c554ec7789426fcb3d6f67a8d805843f32c5993f94  pax-utils-1.1.6.tar.xz"

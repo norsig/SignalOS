@@ -1,0 +1,47 @@
+# Contributor: Alan Lacerda <alacerda@alpinelinux.org>
+# Maintainer:
+pkgname=mate-screensaver
+pkgver=1.14.1
+pkgrel=0
+pkgdesc="A screen saver and locker for MATE"
+url="https://github.com/mate-desktop/mate-screensaver"
+arch="all"
+license="GPLv2"
+depends=""
+depends_dev=""
+makedepends="$depends_dev intltool glib-dev libxscrnsaver-dev gtk+2.0-dev 
+	mate-desktop-dev dbus-glib-dev mate-menus-dev dconf-dev"
+install=""
+subpackages="$pkgname-dev $pkgname-doc $pkgname-lang"
+source="http://pub.mate-desktop.org/releases/${pkgver%.*}/$pkgname-$pkgver.tar.xz"
+
+_builddir="$srcdir/$pkgname-$pkgver/"
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+                --build=$CBUILD \
+                --host=$CHOST \
+		--with-gtk=2.0 \
+		--sysconfdir=/etc \
+                --prefix=/usr  || return 1
+        make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="${pkgdir}" install || return 1
+}
+
+md5sums="fa6f55f00f33fb6fca007c30dd1d4736  mate-screensaver-1.14.1.tar.xz"
+sha256sums="e903932d9e3b01b527abf8b4957d68797afd1b6b035854bcbbd5e4e6934da5c6  mate-screensaver-1.14.1.tar.xz"
+sha512sums="28b5834450da9d7d2fd3a77504f244e69212e751435bd41a957f30a5231db312dba37ee39442c63a40098bb3d1e1fade81ea423f9d59b29fc5d1201522d1d8f8  mate-screensaver-1.14.1.tar.xz"

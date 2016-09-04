@@ -1,0 +1,56 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=geary
+pkgver=0.10.0
+pkgrel=0
+pkgdesc="A lightweight email program designed around conversations"
+url="http://yorba.org/geary/"
+arch="all"
+license="LGPLv2+"
+depends="hicolor-icon-theme gsettings-desktop-schemas"
+depends_dev=""
+makedepends="$depends_dev"
+makedepends="$depends_dev cmake vala gtk+3.0-dev gmime-dev libgee-dev
+	desktop-file-utils libunique3-dev libcanberra-dev libsecret-dev
+	webkitgtk-dev libnotify-dev gobject-introspection-dev gtk-doc
+	paxmark gcr-dev"
+
+install=""
+subpackages="$pkgname-lang"
+source="https://download.gnome.org/sources/geary/${pkgver%.*}/geary-$pkgver.tar.xz"
+
+_builddir="$srcdir"/geary-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	cmake . \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DGSETTINGS_COMPILE=OFF \
+		-DGSETTINGS_COMPILE_IN_PLACE=OFF \
+		-DICON_UPDATE=OFF \
+		-DDESKTOP_UPDATE=OFF \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+
+	# webkit JIT has problems with hardened kernel
+	paxmark -m "$pkgdir"/usr/bin/geary || return 1
+
+}
+
+md5sums="c9735cb5eb53384c0c9d40ff815ed232  geary-0.10.0.tar.xz"
+sha256sums="46197a5a1b8b040adcee99082dbfd9fff9ca804e3bf0055a2e90b13214bdbca5  geary-0.10.0.tar.xz"
+sha512sums="9126acb3608f7aac9236f7d38f5ca549fe04427e244bbff093d06095e09d0ae642ed8e5722325f152a40d3c642a5f31035fca1685749fbe311c4bf3965ee3256  geary-0.10.0.tar.xz"

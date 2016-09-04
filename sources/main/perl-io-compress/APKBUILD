@@ -1,0 +1,42 @@
+# Contributor: Leonardo Arena <rnalrd@alpinelinux.org>
+# Maintainer:  Leonardo Arena <rnalrd@alpinelinux.org>
+pkgname=perl-io-compress
+_realname=IO-Compress
+pkgver=2.069
+pkgrel=2
+pkgdesc="Perl compression library"
+url="http://search.cpan.org/dist/IO-Compress/"
+arch="noarch"
+license="GPL PerlArtistic"
+depends="perl perl-compress-raw-bzip2 perl-compress-raw-zlib"
+makedepends="perl-dev"
+install=
+subpackages=""
+source="http://search.cpan.org/CPAN/authors/id/P/PM/PMQS/${_realname}-${pkgver}.tar.gz"
+
+_builddir="$srcdir/$_realname-$pkgver"
+
+build() {
+	cd $_builddir
+	PERL_MM_USE_DEFAULT=1 perl Makefile.PL INSTALLDIRS=vendor || return 1
+	make || return 1
+}
+
+package() {
+	cd $_builddir
+	make DESTDIR="$pkgdir" install || return 1
+
+	# conflicts with core perl
+	rm "$pkgdir"/usr/bin/zipdetails || return 1
+	rmdir "$pkgdir"/usr/bin 2>/dev/null || true
+
+	# creates file collision among perl modules
+	find "$pkgdir" -name perllocal.pod -delete
+
+	# man pages are already provided by perl-doc
+	rm -rf "$pkgdir"/usr/share/man || return 1
+}
+
+md5sums="b26925161e3f01919f60344d1bbb49c4  IO-Compress-2.069.tar.gz"
+sha256sums="e9d36d93e12874536ecbf6c1db80aae34236645798b3501b479c78e09da3f28c  IO-Compress-2.069.tar.gz"
+sha512sums="ed2f98ec380af0f23f82b422513a95e0d3023dbbc2662e52bf6a5d59a32c744fa3c5096dd7dde7997db5e508ea1ed378095437ae29cad3b7aac6bd9a85a999fb  IO-Compress-2.069.tar.gz"

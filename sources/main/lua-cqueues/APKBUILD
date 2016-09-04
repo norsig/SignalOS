@@ -1,0 +1,51 @@
+# Contributor: Jakub Jirutka <jakub@jirutka.cz>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+_luaversions="5.1 5.2 5.3"
+pkgname=lua-cqueues
+_pkgname=cqueues
+pkgver=20160808
+pkgrel=0
+pkgdesc="Lua event loop using coroutines"
+url="http://25thandclement.com/~william/projects/cqueues.html"
+arch="noarch"
+license="MIT"
+depends=""
+makedepends="openssl-dev m4 bsd-compat-headers"
+subpackages=""
+for _i in $_luaversions; do
+	makedepends="$makedepends lua${_i}-dev"
+	subpackages="$subpackages lua${_i}-$_pkgname:_package"
+done
+source="cqueues-$pkgver.tar.gz::https://github.com/wahern/cqueues/archive/rel-$pkgver.tar.gz"
+builddir="$srcdir/cqueues-rel-$pkgver"
+
+build() {
+	cd "$builddir"
+
+	# Override the HAVE_* tests that depend on GLIBC. grep for "#define HAVE_" on new releases.
+	export CFLAGS="$CFLAGS -DHAVE_EVENTFD=1 -DHAVE_EPOLL_CREATE1=1 -DHAVE_PIPE2=1"
+
+	local lver; for lver in $_luaversions; do
+		msg "Building for Lua $lver"
+		make all$lver || return 1
+	done
+}
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+_package() {
+	local lver=${subpkgname:3:3}
+	pkgdesc="$pkgdesc - for Lua $lver"
+	arch="all"
+	depends="lua$lver"
+	install_if="lua$lver $pkgname=$pkgver-r$pkgrel"
+
+	cd "$builddir"
+	make DESTDIR="$subpkgdir" prefix=/usr install$lver
+}
+
+md5sums="f9b472cb2d534f63a1921dca3f7f889c  cqueues-20160808.tar.gz"
+sha256sums="f4be75b7d07881a5f8e0fb0304bde1af82b36a3913c85fc016cf349d9f28cd26  cqueues-20160808.tar.gz"
+sha512sums="c9b0760a618139e54b49ba3cea9ea575549a650a206d32b5e43ed89e2cae6dd5dffec697a64f8ab79e03095352df107faba484c6057170946c6d696152d2ca0a  cqueues-20160808.tar.gz"

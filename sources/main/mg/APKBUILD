@@ -1,0 +1,46 @@
+# Contributor: Lee Hinman <hinman@gmail.com>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=mg
+pkgver=20140414
+pkgrel=3
+pkgdesc="mg is Micro GNU/emacs, this is a portable version of the mg maintained by the OpenBSD team."
+url="http://homepage.boetes.org/software/mg"
+arch="x86 x86_64"
+license="public-domain BSD"
+depends=
+makedepends="ncurses-dev libbsd-dev bsd-compat-headers"
+install=
+subpackages="$pkgname-doc"
+source="http://dev.alpinelinux.org/archive/$pkgname-$pkgver.tar.gz
+	musl-fixes.patch
+	"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+
+prepare() {
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	make prefix=/usr mandir=/usr/share/man || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make INSTALL=install DESTDIR="$pkgdir" prefix=/usr \
+		mandir=/usr/share/man install || return 1
+	install -Dm644 tutorial "$pkgdir"/usr/share/doc/$pkgname/tutorial
+}
+
+md5sums="ad4a99a5e26d25db75af7936c6657fbe  mg-20140414.tar.gz
+b09b7700ded811df8f6cf35f9a8df1ff  musl-fixes.patch"
+sha256sums="89ce25ee13cedc14c3c5c7b76d7a9e0ea38a060ad61e90ac43258d8dadf0d065  mg-20140414.tar.gz
+f05ae4f0cd9475932ebe51e32ce05217e7fb59a5a0614efd2b33af4cc888323c  musl-fixes.patch"
+sha512sums="b080b24c6015225ee1670eb6f062a21f40d34b02c699687d92842983506497c93e15cceb79d05b6cbbebfa8466f7261cb7dde8bcc4888489236cf64104215161  mg-20140414.tar.gz
+47ced85e221951c02654533a015be67018c045ad336a9997b70dcc869f10546318aeae8d1fbd43248d485e4f9c1c950deb93789b7aa8def493ba036af1beaaa1  musl-fixes.patch"

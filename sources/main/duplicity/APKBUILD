@@ -1,0 +1,41 @@
+# Contributor: Łukasz Jendrysik <scadu@yandex.com>
+# Contributor: Matt Smith <mcs@darkregion.net>
+# Maintainer:  Matt Smith <mcs@darkregion.net>
+pkgname=duplicity
+pkgver=0.7.07.1
+pkgrel=0
+pkgdesc="Encrypted bandwidth-efficient backup using the rsync algorithm"
+url="http://duplicity.nongnu.org/"
+arch="all"
+license="GPL"
+depends="python py-boto gnupg ncftp py-lockfile"
+makedepends="python-dev py-setuptools librsync-dev"
+install=
+subpackages="$pkgname-doc $pkgname-lang"
+source="https://code.launchpad.net/$pkgname/${pkgver:0:3}-series/$pkgver/+download/$pkgname-$pkgver.tar.gz"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+
+prepare() {
+        local i
+        cd "$_builddir"
+        for i in $source; do
+                case $i in
+                *.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+                esac
+        done
+}
+
+build() {
+	cd "$_builddir"
+	python setup.py build || return 1
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py install --root "$pkgdir"
+}
+
+md5sums="4f90bcd93f5e6ac1aa3f4519b28f5b89  duplicity-0.7.07.1.tar.gz"
+sha256sums="594c6d0e723e56f8a7114d57811c613622d535cafdef4a3643a4d4c89c1904f8  duplicity-0.7.07.1.tar.gz"
+sha512sums="363266232763791bac9e84a9e345dda6ffa278a89597a094540088e12e47b56cb2459f72073c0020b77504514149b1ccb9bed7a67e516443a674975954f49129  duplicity-0.7.07.1.tar.gz"

@@ -1,0 +1,65 @@
+# Contributor: August Klein <amatcoder@gmail.com>
+# Maintainer: August Klein <amatcoder@gmail.com>
+pkgname=cppcheck
+pkgver=1.73
+pkgrel=0
+pkgdesc="A static analysis tool for C/C++ code"
+url="http://cppcheck.sourceforge.net"
+arch="all"
+license="GPL3"
+depends=""
+makedepends="docbook-xsl pcre-dev qt5-qttools-dev"
+subpackages="$pkgname-doc $pkgname-htmlreport $pkgname-gui"
+source="$pkgname-$pkgver.tar.gz::https://github.com/danmar/cppcheck/archive/$pkgver.tar.gz
+	avoid_execinfo.patch
+	set_datadir.patch"
+
+builddir="$srcdir"/$pkgname-$pkgver
+
+build() {
+	cd "$builddir"
+	make DB2MAN=/usr/share/xml/docbook/xsl-stylesheets-*/manpages/docbook.xsl man || return 1
+
+	cd gui
+	lrelease-qt5 gui.pro || return 1
+	qmake-qt5 HAVE_RULES=yes || return 1
+	make SRCDIR=build CFGDIR=/usr/share/cppcheck/cfg HAVE_RULES=yes || return 1
+}
+
+package() {
+	cd "$builddir"
+	make DESTDIR="$pkgdir" CFGDIR=/usr/share/cppcheck/cfg HAVE_RULES=yes install || return 1
+	install -Dm644 cppcheck.1 "$pkgdir"/usr/share/man/man1/cppcheck.1 || return 1
+}
+
+htmlreport() {
+	pkgdesc="A utility to generate a html report of a XML file produced by cppcheck"
+	arch="noarch"
+	depends="$pkgname py-pygments"
+
+	cd "$builddir"
+	mkdir -p "$subpkgdir"/usr/bin
+	mv "$pkgdir"/usr/bin/$subpkgname "$subpkgdir"/usr/bin/
+}
+
+gui() {
+	pkgdesc="A Qt gui for cppcheck"
+	depends="$pkgname"
+
+	cd "$builddir"
+	mkdir -p "$subpkgdir"/usr/bin
+	mv gui/$subpkgname "$subpkgdir"/usr/bin/ || return 1
+
+	mkdir -p "$subpkgdir"/usr/share/cppcheck/lang/
+	mv gui/cppcheck*.qm "$subpkgdir"/usr/share/cppcheck/lang/
+}
+
+md5sums="8c2713c4475ff204438b7dc999011e26  cppcheck-1.73.tar.gz
+3d29b07670be78cf36ef8493089f37cd  avoid_execinfo.patch
+24f448e5821494d4f02d44551aa8cb0a  set_datadir.patch"
+sha256sums="938d792c9399233b551bd9991d6842f353fa8dad973d5e457b78be66646c8b8f  cppcheck-1.73.tar.gz
+aa6a72bc06039b857accc04c00cddb37d19aa86f3a8aee01ce17fac969d87fe4  avoid_execinfo.patch
+993e9426221624f59f2e22a814af03097976a3fded7c06f57bf702d532e7bcef  set_datadir.patch"
+sha512sums="556f5f3f0f4cd33a470ee6a16a60b3a0a43fac0547bd3bb70f4a3253fa51870d2b780686d907bfc3a038f8630cf9e6ebc0adc417104fef69ab3369c6157f6ae3  cppcheck-1.73.tar.gz
+5c21e4be5a0e11b26da38e4bbe5566d27e01024198947ed6bf4de88f1067159e730966e85d67af99034e54be9120a065b17f16b86278b28d792597c3f8c65c2b  avoid_execinfo.patch
+76f0699273347068b562d001cf6701ef3180506d21bd9298a6b1f2e522ea3c32b1cc350128a2c0b8d69b89aa3c0992b04e9d641ae170b51e3073acb3c6ca7b6e  set_datadir.patch"

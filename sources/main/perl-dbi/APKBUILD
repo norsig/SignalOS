@@ -1,0 +1,37 @@
+# Contributor: Jeff Bilyk <jbilyk at gmail> 
+# Maintainer: Leonardo Arena <rnalrd@alpinelinux.org>
+pkgname=perl-dbi
+_realpkgname=DBI
+pkgver=1.634
+pkgrel=1
+pkgdesc="Database independent interface for Perl"
+url="http://search.cpan.org/dist/${_realpkgname}"
+arch="all"
+license="GPL PerlArtistic"
+depends=
+makedepends="perl perl-dev"
+subpackages="$pkgname-doc"
+source="http://www.cpan.org/authors/id/T/TI/TIMB/${_realpkgname}-$pkgver.tar.gz"
+
+_builddir="$srcdir"/${_realpkgname}-$pkgver
+
+prepare() {
+	return 0
+}
+
+build() {
+	cd "$_builddir"
+	PERL_MM_USE_DEFAULT=1 perl Makefile.PL INSTALLDIRS=vendor || return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install
+        # creates file collision among perl modules
+        find "$pkgdir" -name perllocal.pod -delete
+}
+
+md5sums="4ad15a9c2cc9b68e3fe1f5cadf9cdb30  DBI-1.634.tar.gz"
+sha256sums="250712f385864818abfba409420d16d9ee61f1cc73ac85159d054a5ee86d1450  DBI-1.634.tar.gz"
+sha512sums="42e2b94d5e4cdcd57aaa43519fa1464a4d7132ed09426bb8cb7092b0ee57edde168105a25d02dcdeb304c6bc13c1ad97bc27b54b5f6af05eeaba011d5dab3c44  DBI-1.634.tar.gz"

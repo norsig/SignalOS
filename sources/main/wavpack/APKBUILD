@@ -1,0 +1,54 @@
+# Contributor: Carlo Landmeter
+# Maintainer:  Natanael Copa <ncopa@alpinelinux.org>
+pkgname=wavpack
+pkgver=4.75.2
+pkgrel=0
+pkgdesc="Audio compression format with lossless, lossy, and hybrid compression modes"
+url="http://www.wavpack.com/"
+arch="all"
+license="BSD"
+depends=""
+makedepends=""
+install=
+subpackages="$pkgname-dev $pkgname-doc"
+source="http://www.wavpack.com/${pkgname}-${pkgver}.tar.bz2"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+prepare() {
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+
+	local _arch_opts=
+	case "$CARCH" in
+	x86 | x86_64) _arch_opts="--enable-mmx" ;;
+	esac
+
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--disable-static \
+		$_arch_opts \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+md5sums="e8bbc4c3382f9148918ad7b896e10ac1  wavpack-4.75.2.tar.bz2"
+sha256sums="7d31b34166c33c3109b45c6e4579b472fd05e3ee8ec6d728352961c5cdd1d6b0  wavpack-4.75.2.tar.bz2"
+sha512sums="f4af9f74aff27d9503d97319a4749d901bd7563c7e3eed025128d58add09dcd16f873d18c54f4bad1df95cdadd9f0c8047f8186d5158c175e60c22ed2df39635  wavpack-4.75.2.tar.bz2"

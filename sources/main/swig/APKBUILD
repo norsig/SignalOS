@@ -1,0 +1,38 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=swig
+pkgver=3.0.10
+pkgrel=0
+pkgdesc="A compiler that makes it easy to integrate C and C++ code with scripting languages"
+url="http://www.swig.org/"
+arch="all"
+license="GPL3 BSD"
+depends="guile"
+makedepends="zlib-dev pcre-dev"
+subpackages="$pkgname-doc"
+source="http://downloads.sourceforge.net/$pkgname/$pkgname-$pkgver.tar.gz"
+
+_builddir="$srcdir/$pkgname-$pkgver"
+prepare() {
+	cd "$_builddir"
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+	install -D -m644 LICENSE "$pkgdir"/usr/share/licenses/$pkgname/LICENSE || return 1
+	install -D -m644 LICENSE-UNIVERSITIES "$pkgdir"/usr/share/licenses/$pkgname/LICENSE-UNIVERSITIES || return 1
+}
+
+md5sums="bb4ab8047159469add7d00910e203124  swig-3.0.10.tar.gz"
+sha256sums="2939aae39dec06095462f1b95ce1c958ac80d07b926e48871046d17c0094f44c  swig-3.0.10.tar.gz"
+sha512sums="599883a08b673cb0975176084fa7a6f5c7e3f6ffa86e8ba600e9d81d80b9d7632668e61c8db519b4c800bdbddcdbf55b0f5ef49f6a80ceafaef864ffcaaa30c1  swig-3.0.10.tar.gz"

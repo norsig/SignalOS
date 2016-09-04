@@ -1,0 +1,29 @@
+# Contributor: Fabian Affolter <fabian@affolter-engineering.ch>
+# Maintainer: Fabian Affolter <fabian@affolter-engineering.ch>
+pkgname=pylint
+pkgver=1.4.3
+pkgrel=0
+pkgdesc="Analyzes Python code looking for bugs and signs of poor quality"
+url="http://pypi.python.org/pypi/pylint"
+arch="noarch"
+license="GPL2+"
+depends="python py-astroid"
+depends_dev=""
+makedepends="python-dev py-setuptools py-astroid"
+install=""
+source="https://files.pythonhosted.org/packages/source/${pkgname:0:1}/$pkgname/$pkgname-$pkgver.tar.gz"
+
+builddir="$srcdir"/$pkgname-$pkgver
+build() {
+	cd "$builddir"
+	python setup.py build || return 1
+}
+
+package() {
+	cd "$builddir"
+	python setup.py install --prefix=/usr --root="$pkgdir" || return 1
+}
+
+md5sums="5924c1c7ca5ca23647812f5971d0ea44  pylint-1.4.3.tar.gz"
+sha256sums="1dce8c143a5aa15e0638887c2b395e2e823223c63ebaf8d5f432a99e44b29f60  pylint-1.4.3.tar.gz"
+sha512sums="63af8c72496b88db967c61d5be2b974fca053a45425ea8b5898e941be135d26c8c004b91b8b3a98337c0c5af4f5a530afbf091d7c5ecfa36bfa36aef9f843a95  pylint-1.4.3.tar.gz"

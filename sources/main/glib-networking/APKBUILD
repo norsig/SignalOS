@@ -1,0 +1,53 @@
+# Contributor: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=glib-networking
+pkgver=2.48.2
+_maj=${pkgver%%.*}
+_min=${pkgver#${_maj}.}
+_min=${_min%%.*}
+_ver=$_maj.$_min
+pkgrel=2
+pkgdesc="Networking support for GLib"
+url="http://www.gnome.org"
+arch="all"
+license="LGPLv2+"
+depends="ca-certificates"
+depends_dev="glib-dev gnutls-dev libproxy-dev intltool libgcrypt-dev"
+makedepends="$depends_dev bash p11-kit-dev"
+install=
+subpackages="$pkgname-lang"
+source="http://download.gnome.org/sources/glib-networking/$_ver/glib-networking-$pkgver.tar.xz"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	CONFIG_SHELL=/bin/bash ./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--disable-more-warnings \
+		--with-libproxy \
+		--with-gnutls \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+	rm -f "$pkgdir"/usr/lib/gio/modules/*.a
+}
+
+md5sums="d7cf81d52c856b0c66f7821021f40e08  glib-networking-2.48.2.tar.xz"
+sha256sums="925c0c49d6b2b8b5695f2e33cd952d1dbb7d18d3f2f796413577719315bb3a84  glib-networking-2.48.2.tar.xz"
+sha512sums="e33e2f2af062eaa686bb20cd872f25eca0bbbf9bba072e74049a2996dd66fe1a2000ba991354ed63fc196f3da4d9cfa05cc4ae31cfe08cfaf997cf08a9e2fd84  glib-networking-2.48.2.tar.xz"

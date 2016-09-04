@@ -1,0 +1,43 @@
+# Contributor: Jeff Bilyk <jbilyk@gmail.com>
+# Contributor: Jean-Charles de Longueville <jch@hellea.eu>
+# Maintainer: Francesco Colista <fcolista@alpinelinux.org>
+pkgname=x2goserver
+pkgver=4.0.1.19
+pkgrel=2
+pkgdesc=" X2Go enables you to access a graphical desktop of a computer over a low bandwidth (or high bandwidth) connection. "
+url="http://x2go.org"
+arch="all"
+license="GPL2+"
+options="suid"
+depends="perl perl-config-simple perl-dbi perl-file-readbackwards perl-capture-tiny perl-dbd-sqlite bash iproute2 makepasswd openssh lsof xauth perl-file-basedir mcookie nx-libs perl-file-which"
+makedepends="libssh2-dev python-dev man"
+install="$pkgname.pre-install $pkgname.post-install"
+subpackages="$pkgname-doc"
+source="http://code.x2go.org/releases/source/$pkgname/$pkgname-$pkgver.tar.gz"
+pkgusers="x2gouser"
+pkggroups="x2gouser"
+
+builddir="$srcdir"/$pkgname-$pkgver
+prepare() {
+	local dir
+	cd "$builddir"
+	for dir in x2goserver*; do
+		if [ -d $dir ]; then
+			sed -i -e "s/^build-indep:.*/build-indep: /g" $dir/Makefile
+		fi
+	done
+}
+
+build() {
+	cd "$builddir"
+	make PREFIX=/usr || return 1
+}
+
+package() {
+	cd "$builddir"
+	make DESTDIR="$pkgdir" PREFIX=/usr install || return 1
+}
+
+md5sums="7f1093c4dbc0a273bcc73a2e4b2c8b69  x2goserver-4.0.1.19.tar.gz"
+sha256sums="3dd5c1464a7992a38760fd6b08f5f8d37646f939f4f7834a7cd96bf4950623cc  x2goserver-4.0.1.19.tar.gz"
+sha512sums="dbd054a6bf781d843a48fcea3449037b991aaa38a52705d48dd5fa8d7fe85c56d4ff31b9a10189a9043a3e5cc0c69475947aea5a5fb78e3c076c0e56079b747d  x2goserver-4.0.1.19.tar.gz"

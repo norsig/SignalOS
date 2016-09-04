@@ -1,0 +1,49 @@
+# Contributor: Alan Lacerda <alacerda@alpinelinux.org>
+# Maintainer: Alan Lacerda <alacerda@alpinelinux.org>
+pkgname=mate-utils
+pkgver=1.14.0
+pkgrel=1
+pkgdesc="Utilities for the MATE Desktop"
+url="https://github.com/mate-desktop/mate-utils"
+arch="all"
+license="GPLv2"
+depends=""
+depends_dev=""
+makedepends="$depends_dev intltool glib-dev gtk+2.0-dev mate-panel-dev
+	libgtop-dev libcanberra-dev itstool libsm-dev libxml2-utils"
+install=""
+subpackages="$pkgname-dev $pkgname-doc $pkgname-lang"
+source="http://pub.mate-desktop.org/releases/${pkgver%.*}/$pkgname-$pkgver.tar.xz"
+
+_builddir="$srcdir/$pkgname-$pkgver"
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+                --build=$CBUILD \
+                --host=$CHOST \
+                --sysconfdir=/etc \
+                --prefix=/usr \
+                --enable-all-themes || return 1
+
+        make || return 1
+
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="${pkgdir}" install || return 1
+}
+
+md5sums="79a46d5600de21d760690e9f544c66e8  mate-utils-1.14.0.tar.xz"
+sha256sums="05b0ffe73a49eb5d5a008e779c2280ab7c803a041681845f9735908f3275a519  mate-utils-1.14.0.tar.xz"
+sha512sums="acb0e347b8c98e207842881c77f4e773771c3f230b437059d08916c8a559f6da33f4681b6b87be7d02f8775ec6cfa00d18079dcce66a23612f79cce2c3dececb  mate-utils-1.14.0.tar.xz"

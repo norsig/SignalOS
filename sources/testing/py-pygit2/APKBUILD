@@ -1,0 +1,37 @@
+# Contributor: Pierre-Gildas MILLON <pgmillon@gmail.com>
+# Maintainer:
+pkgname=py-pygit2
+pkgver=0.24.1
+pkgrel=0
+pkgdesc="Python bindings for libgit2"
+url=https://github.com/libgit2/pygit2
+arch=all
+license=GPLv2
+depends=
+makedepends="py-setuptools py-cffi python-dev libgit2-dev"
+source=pygit2-${pkgver}.tar.gz::https://github.com/libgit2/pygit2/archive/v${pkgver}.tar.gz
+
+_builddir=$srcdir/pygit2-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	python setup.py build
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py install --root "$pkgdir"
+}
+
+md5sums="d9915e3f8a7da65af3ea70f5bc02967d  pygit2-0.24.1.tar.gz"
+sha256sums="e62bd35c39b4dec64a8a35ab688e98352603c21a6b254473763868a45110fb47  pygit2-0.24.1.tar.gz"
+sha512sums="a6ac980d20f9342cefbb3646cef0b99b75037813d11e64797a62c8df5f0cc2d4a8397c266caf25f49d9c2e2cb47b0087e38e64527ef59385ddb00023cb04ab0f  pygit2-0.24.1.tar.gz"

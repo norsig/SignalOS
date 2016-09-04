@@ -1,0 +1,83 @@
+# Contributor: Matt Smith <mcs@darkregion.net>
+# Maintainer: Matt Smith <mcs@darkregion.net>
+_php=php5
+pkgname=phpmyadmin
+pkgver=4.6.3
+pkgrel=0
+pkgdesc="A Web-based PHP tool for administering MySQL"
+url="http://www.phpmyadmin.net/"
+arch="noarch"
+license="GPL2 MIT BSD"
+depends="${_php} ${_php}-mysqli ${_php}-zip ${_php}-zlib ${_php}-bz2
+	${_php}-ctype ${_php}-gd ${_php}-mcrypt ${_php}-json"
+depends_dev=
+makedepends="$depends_dev"
+install="$pkgname.post-install"
+subpackages="$pkgname-doc"
+_fullpkgname=phpMyAdmin-$pkgver-all-languages
+source="https://files.phpmyadmin.net/phpMyAdmin/$pkgver/$_fullpkgname.tar.xz
+	$pkgname.apache2.conf
+	"
+
+_builddir="$srcdir"/$_fullpkgname
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	return 0
+}
+
+package() {
+	cd "$_builddir"
+	mkdir -p "$pkgdir"/usr/share/webapps/$pkgname \
+		"$pkgdir"/etc/$pkgname \
+		|| return 1
+
+	# copy phpmyadmin
+	cp -r "$_builddir"/* "$pkgdir"/usr/share/webapps/$pkgname/ \
+		|| return 1
+
+	# install the sample config
+	install -m660  \
+		"$pkgdir"/usr/share/webapps/$pkgname/config.sample.inc.php \
+		"$pkgdir"/etc/$pkgname/config.inc.php \
+		|| return 1
+	ln -sf /etc/$pkgname/config.inc.php \
+		"$pkgdir"/usr/share/webapps/$pkgname/config.inc.php \
+		|| return 1
+
+	# install the apache2 config
+	install -Dm644 "$srcdir"/$pkgname.apache2.conf \
+		"$pkgdir"/etc/apache2/conf.d/$pkgname.conf || return 1
+
+	# copy sample config
+	mkdir -p "$pkgdir"/usr/share/$pkgname/ || return 1
+	mv "$pkgdir"/usr/share/webapps/$pkgname/config.sample.inc.php \
+		"$pkgdir"/usr/share/$pkgname/ || return 1
+}
+
+doc() {
+	cd "$_builddir"
+	mkdir -p "$subpkgdir"/usr/share/doc/$pkgname || return 1
+
+	_docs="ChangeLog LICENSE README RELEASE-DATE-$pkgver"
+	for _doc in $_docs; do
+		mv "$pkgdir"/usr/share/webapps/$pkgname/$_doc \
+			"$subpkgdir"/usr/share/doc/$pkgname/ \
+			|| return 1
+	done
+}
+
+md5sums="53c7a6a577d10de04a5dd21a05018542  phpMyAdmin-4.6.3-all-languages.tar.xz
+2d144825122042b4a2536ad789d66e8e  phpmyadmin.apache2.conf"
+sha256sums="943bad38a95f21bb015bdb78c9c067e0ea7510c1b35d4b8e757cb89c413e3bac  phpMyAdmin-4.6.3-all-languages.tar.xz
+4fbc1d0338ed7234a3d74f71910a24e467c8a0ec1dad31324e954741f93bd2d3  phpmyadmin.apache2.conf"
+sha512sums="6393dc4e03c519dc57bf2b616e5a4ff6efc98feeee84bf864c1d2cc250e19a327967a67497cf0440cec76e9ec11d25c37c61a53f557a867afe53c5a428ad0944  phpMyAdmin-4.6.3-all-languages.tar.xz
+c6af2960b95924c31cc05d90e7282ba9be6cb6eabb134b8bb627230a4253c017eca75132420a356acd6aecdce146e29666ed90fc90749820060a64478d3e2105  phpmyadmin.apache2.conf"

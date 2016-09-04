@@ -1,0 +1,45 @@
+# Maintainer: Jakub Jirutka <jakub@jirutka.cz>
+_gemname=bundler
+pkgname=ruby-$_gemname
+pkgver=1.12.5
+pkgrel=0
+pkgdesc="Manage an application's gem dependencies"
+url="http://gembundler.com/"
+arch="noarch"
+license="MIT"
+depends="ruby ruby-io-console"
+makedepends=""
+source="http://gems.rubyforge.org/gems/$_gemname-$pkgver.gem"
+builddir="$srcdir"/$_gemname-$pkgver
+
+build() {
+	return 0
+}
+
+package() {
+	local gemdir="$pkgdir/$(ruby -rubygems -e 'puts Gem.default_dir')"
+
+	mkdir -p "$pkgdir"/usr/bin || return 1
+
+	gem install --local \
+		--install-dir "$gemdir" \
+		--ignore-dependencies \
+		--no-document \
+		--verbose \
+		"$srcdir"/$_gemname-$pkgver.gem || return 1
+
+	rm -rf "$gemdir"/cache \
+		"$gemdir"/build_info \
+		"$gemdir"/doc
+
+	cd "$pkgdir"
+	local path; for path in usr/lib/ruby/gems/*/bin/*; do
+		if [ -f "$path" ]; then
+			ln -s /$path "$pkgdir"/usr/bin/ || return 1
+		fi
+	done
+}
+
+md5sums="2f6f897c2c77c790f51b26850661b3dc  bundler-1.12.5.gem"
+sha256sums="6c5e111b828de62d3b5d72d8ae0add77099a34059ede582f0de7c85479ec04e1  bundler-1.12.5.gem"
+sha512sums="e854186e06a2c09b532d5fa72ef75de3a9206b86b86ef4a7f6dbf5a02030a76efd43b213d440933252f2e2ead56d4675b2e180c0bd93cfaa870b408a5797a142  bundler-1.12.5.gem"

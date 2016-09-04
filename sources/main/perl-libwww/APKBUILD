@@ -1,0 +1,37 @@
+# Contributor: Leonardo Arena <rnalrd@alpinelinux.org>
+# Maintainer:  Leonardo Arena <rnalrd@alpinelinux.org>
+pkgname=perl-libwww
+_realname=libwww-perl
+pkgver=6.08
+pkgrel=0
+pkgdesc="Perl module - World Wide Web library"
+url="http://search.cpan.org/~mschilli"
+arch="noarch"
+license="GPL PerlArtistic"
+depends="perl-http-date perl-http-cookies perl-net-http                                                                                                                                               
+perl-http-daemon perl-html-parser perl-file-listing perl-www-robotrules                                                                                       
+perl-http-negotiate perl-uri perl-http-message perl-lwp-mediatypes                      
+perl-encode-locale"
+makedepends="perl-dev"
+install=
+subpackages="$pkgname-doc"
+source="http://search.cpan.org/CPAN/authors/id/M/MS/MSCHILLI/$_realname-$pkgver.tar.gz"
+
+_builddir="$srcdir/$_realname-$pkgver"
+
+build() {
+	cd $_builddir
+	PERL_MM_USE_DEFAULT=1 perl Makefile.PL INSTALLDIRS=vendor || return 1
+	make && make test || return 1
+}
+
+package() {
+	cd $_builddir
+	make DESTDIR="$pkgdir" install
+	# creates file collision among perl modules
+	find "$pkgdir" -name perllocal.pod -delete
+}
+
+md5sums="28e5005609af16c1fa297d12e0312f86  libwww-perl-6.08.tar.gz"
+sha256sums="314d239bdcee4bce849d5c9fe5986a39b2ce12199833ffa32d73a0950531fe94  libwww-perl-6.08.tar.gz"
+sha512sums="9ce6e80ae9f4b244475dbfbe479057545974e639c50dad1c744eef0ba4442f926b1a683ef19878f841a45cd34692a2d6736e1c8bb98e9a34bc20d3f2ea38e6b1  libwww-perl-6.08.tar.gz"

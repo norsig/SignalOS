@@ -1,0 +1,44 @@
+# Contributor: Carlo Landmeter
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=libmodplug
+pkgver=0.8.8.5
+pkgrel=1
+pkgdesc="A MOD playing library"
+url="http://modplug-xmms.sourceforge.net/"
+arch="all"
+license="custom"
+depends=
+makedepends=
+install=
+subpackages="$pkgname-dev $pkgname-doc"
+source="http://downloads.sourceforge.net/modplug-xmms/$pkgname-$pkgver.tar.gz"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+
+prepare() {
+	cd "$_builddir"
+	# apply patches here
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+	install -D -m644 COPYING ${pkgdir}/usr/share/licenses/${pkgname}/LICENSE
+}
+
+md5sums="5f30241db109d647781b784e62ddfaa1  libmodplug-0.8.8.5.tar.gz"
+sha256sums="77462d12ee99476c8645cb5511363e3906b88b33a6b54362b4dbc0f39aa2daad  libmodplug-0.8.8.5.tar.gz"
+sha512sums="aa943b8df5e3fd41b497e55f5d2c493c28a4c90d444d041f74a58ab5f4702eab9bb36f337e4c795561e0006846a5fda0b42bcf96b33e1267b190f6005862b332  libmodplug-0.8.8.5.tar.gz"

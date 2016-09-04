@@ -1,0 +1,50 @@
+# Contributor: Matt Smith <mcs@darkregion.net>
+# Maintainer: Matt Smith <mcs@darkregion.net>
+pkgname=py-urwid
+_pkgname=urwid
+pkgver=1.3.1
+pkgrel=0
+pkgdesc="A console user interface library for Python"
+url="http://excess.org/urwid/"
+arch="all"
+license="LGPL2+"
+depends=""
+makedepends="python-dev py-setuptools py-templayer py-sphinx"
+install=""
+subpackages="$pkgname-doc $pkgname-examples"
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz"
+
+_builddir="$srcdir"/$_pkgname-$pkgver
+prepare() {
+	cd "$_builddir"
+	# apply patches here
+}
+
+build() {
+	cd "$_builddir"
+	python setup.py build || return 1
+	sphinx-build -b html docs docs_tmp
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py install --prefix=/usr --root="$pkgdir" || return 1
+}
+
+examples() {
+	arch="noarch"
+	# Put the examples into a seperate package
+	mkdir -p "$subpkgdir"/usr/share/doc/"$pkgname"/examples || return 1
+	mv "$_builddir"/examples "$subpkgdir"/usr/share/doc/"$pkgname"/examples || return 1
+}
+
+doc() {
+	arch="noarch"
+	cd "$_builddir"
+	mkdir -p "$subpkgdir"/usr/share/doc/"$pkgname"/ || return 1
+	mv "$_builddir"/docs_tmp "$subpkgdir"/usr/share/doc/"$pkgname"/manual || return 1
+}
+
+md5sums="2e1a005cb31368fe21bfeba2d6ad5a5c  urwid-1.3.1.tar.gz"
+sha256sums="cfcec03e36de25a1073e2e35c2c7b0cc6969b85745715c3a025a31d9786896a1  urwid-1.3.1.tar.gz"
+sha512sums="8b505d38f3a0c04bbf527b324dc36212f2580213dd55eca61c66705d3beaac4f074c39aaa0f4f71add1fe5f3fce4c4c6dc88dd1e981b04bac6d52195d7a3f0ed  urwid-1.3.1.tar.gz"

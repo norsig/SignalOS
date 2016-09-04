@@ -1,0 +1,42 @@
+# Contributor: Fabian Affolter <fabian@affolter-engineering.ch>
+# Maintainer: Fabian Affolter <fabian@affolter-engineering.ch>
+pkgname=py-pyramid
+_pkgname=pyramid
+pkgver=1.5.2
+pkgrel=0
+pkgdesc="The Pyramid Web Framework"
+url="http://www.pylonsproject.org/"
+arch="noarch"
+license="BSD"
+depends="python py-webob py-repoze-lru py-venusian py-chameleon py-zope-component
+		py-zope-deprecation py-zope-configuration py-translationstring"
+depends_dev=""
+makedepends="python-dev py-setuptools"
+install=""
+subpackages=""
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz"
+
+_builddir="$srcdir"/$_pkgname-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	python setup.py build || return 1
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py install --prefix=/usr --root="$pkgdir" || return 1
+}
+
+md5sums="d56b140b41d42f818f4349d94d968c9a  pyramid-1.5.2.tar.gz"
+sha256sums="12057e63c9c99f88bc71af12f00a5e2c934221122baf582c7365361cba45bdcc  pyramid-1.5.2.tar.gz"
+sha512sums="531d68fb480cf1420e069025537968abebc17bed98bf25e9993b8c744a12c5031df4b9b09e6f775bb1176f305f2e2c8ddb176ff43d1b34a10f2181df74fac8b8  pyramid-1.5.2.tar.gz"

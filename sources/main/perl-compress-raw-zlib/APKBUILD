@@ -1,0 +1,37 @@
+# Contributor: Leonardo Arena <rnalrd@alpinelinux.org>
+# Maintainer:  Leonardo Arena <rnalrd@alpinelinux.org>
+pkgname=perl-compress-raw-zlib
+_realname=Compress-Raw-Zlib
+pkgver=2.069
+pkgrel=3
+pkgdesc="Perl low-level interface to zlib compression library"
+url="http://search.cpan.org/dist/Compress-Raw-Zlib/"
+arch="all"
+license="GPL PerlArtistic"
+depends="perl"
+makedepends="perl-dev"
+install=
+subpackages=""
+source="http://search.cpan.org/CPAN/authors/id/P/PM/PMQS/${_realname}-${pkgver}.tar.gz"
+
+_builddir="$srcdir/$_realname-$pkgver"
+build() {
+	cd $_builddir
+	PERL_MM_USE_DEFAULT=1 perl Makefile.PL INSTALLDIRS=vendor || return 1
+	#PERL_MM_USE_DEFAULT=1 perl Makefile.PL || return 1
+	make || return 1
+}
+
+package() {
+	cd $_builddir
+	make DESTDIR="$pkgdir" install
+	# creates file collision among perl modules
+	find "$pkgdir" -name perllocal.pod -delete
+
+	# man pages are already provided by perl-doc
+	rm -rf "$pkgdir"/usr/share/man || return 1
+}
+
+md5sums="c1f99178e6e29b0037785afa6d8bbcff  Compress-Raw-Zlib-2.069.tar.gz"
+sha256sums="9a647fe7d2e6122370372a11c1e3a2e2b54c90bba595cad170854fdaa8a64619  Compress-Raw-Zlib-2.069.tar.gz"
+sha512sums="eadb0b862042f7fe4935f8752b976420d2033e653c610ab97f64d80ee14bcdb9ffa73e1bdcc1a554d5a1a5314580b3398d79d3174b3820e41dc906cdd9b6bfae  Compress-Raw-Zlib-2.069.tar.gz"

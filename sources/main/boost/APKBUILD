@@ -1,0 +1,135 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=boost
+pkgver=1.60.0
+_pkgver="${pkgver//./_}"
+pkgrel=3
+pkgdesc="Free peer-reviewed portable C++ source libraries"
+url="http://www.boost.org/"
+arch="all"
+license="custom"
+depends=""
+depends_dev="linux-headers"
+makedepends="$depends_dev python2-dev>=2.6 python3-dev flex bison bzip2-dev zlib-dev"
+subpackages="$pkgname-dev $pkgname-doc"
+source="http://downloads.sourceforge.net/$pkgname/${pkgname}_$_pkgver.tar.gz"
+builddir="$srcdir/${pkgname}_${_pkgver}"
+
+_libs="date_time
+	filesystem
+	graph
+	iostreams
+	math
+	prg_exec_monitor
+	program_options
+	python3
+	python
+	random
+	regex
+	serialization
+	signals
+	system
+	thread
+	unit_test_framework
+	wave
+	wserialization
+	"
+for _lib in $_libs; do
+	subpackages="$subpackages $pkgname-$_lib:_boostlib"
+done
+
+prepare() {
+	default_prepare || return 1
+
+	cd "$builddir"
+
+	PY2_VERSION="$(_pyversion python)"
+	PY3_VERSION="$(_pyversion python3)"
+
+	# create user-config.jam
+	cat > user-config.jam <<-__EOF__
+
+	using gcc : : $CC : <cxxflags>"${CXXFLAGS}" <linkflags>"${LDFLAGS}" ;
+	using python : ${PY2_VERSION} : /usr/bin/python : /usr/include/python${PY2_VERSION} : /usr/lib ;
+	using python : ${PY3_VERSION} : /usr/bin/python3 : /usr/include/python${PY3_VERSION}m : /usr/lib ;
+
+	__EOF__
+}
+
+_options="--user-config=\"$builddir/user-config.jam\"
+	--prefix=\"$pkgdir/usr\"
+	release
+	debug-symbols=off
+	threading=single,multi
+	runtime-link=shared
+	link=shared,static
+	cflags=-fno-strict-aliasing
+	-sPYTHON_ROOT=/usr
+	-sPYTHON_VERSION=$PY2_VERSION
+	-sTOOLS=gcc
+	--layout=tagged
+	-q
+	-j${JOBS:-2}
+	"
+
+case "$CARCH" in
+	armhf|aarch64) _boostarch=arm;;
+	*) _boostarch=$CARCH;;
+esac
+_enginedir=tools/build/src/engine
+
+build() {
+	export BOOST_ROOT="$builddir"
+
+	msg "Building bjam"
+	cd "$builddir"/$_enginedir
+	CC= ./build.sh cc || return 1
+	local _bjam="$PWD/bin.linux$_boostarch/bjam"
+
+	msg "Building bcp"
+	cd "$builddir"/tools/bcp
+	"$_bjam" -j${JOBS:-2} || return 1
+
+	msg "Building boost"
+	cd "$builddir"
+	"$_bjam" $_options
+}
+
+package() {
+	export BOOST_ROOT="$builddir"
+	cd "$builddir"
+
+	install -Dm755 $_enginedir/bin.linux${_boostarch}/bjam \
+		"$pkgdir"/usr/bin/bjam || return 1
+
+	install -Dm755 dist/bin/bcp "$pkgdir"/usr/bin/bcp || return 1
+
+	install -Dm644 LICENSE_1_0.txt \
+		"$pkgdir"/usr/share/licenses/$pkgname/LICENSE_1_0.txt || return 1
+
+	"$pkgdir"/usr/bin/bjam $_options \
+		--includedir="$pkgdir"/usr/include \
+		--libdir="$pkgdir"/usr/lib \
+		install || return 1
+
+	cd libs/python/pyste/install
+	python setup.py install --root="$pkgdir" || return 1
+}
+
+_boostlib() {
+	local name="${subpkgname#$pkgname-}"
+	pkgdesc="Boost $name library"
+	case "$name" in
+	python*) depends="$depends $name"
+	esac
+
+	mkdir -p "$subpkgdir"/usr/lib
+	mv "$pkgdir"/usr/lib/libboost_$name* "$subpkgdir"/usr/lib/
+}
+
+_pyversion() {
+	$1 -c 'import sys; print("%i.%i" % (sys.version_info.major, sys.version_info.minor))'
+}
+
+md5sums="28f58b9a33469388302110562bdf6188  boost_1_60_0.tar.gz"
+sha256sums="21ef30e7940bc09a0b77a6e59a8eee95f01a766aa03cdfa02f8e167491716ee4  boost_1_60_0.tar.gz"
+sha512sums="f36264bea3b30193f4d4756e6244797350258e0492a4a3601300ee732682eba85a9aed88ced30da3ff187c3774f9ea4d6f9686b001d3af9726a1cd967cd795c5  boost_1_60_0.tar.gz"

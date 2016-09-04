@@ -1,0 +1,41 @@
+# Contributor: William Pitcock <nenolod@dereferenced.org>
+# Maintainer: William Pitcock <nenolod@dereferenced.org>
+pkgname=py-blinker
+_pkgname=blinker
+pkgver=1.4
+pkgrel=0
+pkgdesc="Fast, simple object-to-object and broadcast signalling"
+url="http://pypi.python.org/pypi/blinker"
+arch="noarch"
+license="MIT"
+depends="python"
+depends_dev=""
+makedepends="python-dev py-setuptools"
+install=""
+subpackages=""
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz"
+
+_builddir="$srcdir"/$_pkgname-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	python setup.py build || return 1
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py install --prefix=/usr --root="$pkgdir" || return 1
+}
+
+md5sums="8b3722381f83c2813c52de3016b68d33  blinker-1.4.tar.gz"
+sha256sums="471aee25f3992bd325afa3772f1063dbdbbca947a041b8b89466dc00d606f8b6  blinker-1.4.tar.gz"
+sha512sums="2f5f71b05c7cc27f5761ba698b05c78c8a491f5285c120e532d24be0c8256daa14e075f3f30e15fb18e7c3f16579af9378a155d058f170e3af9ffdb89e49f56e  blinker-1.4.tar.gz"

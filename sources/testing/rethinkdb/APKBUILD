@@ -1,0 +1,77 @@
+# Contributor: Carlo Landmeter <clandmeter@gmail.com>
+# Maintainer:
+pkgname=rethinkdb
+pkgver=2.3.1
+pkgrel=0
+pkgdesc="Distributed powerful and scalable NoSQL database"
+url="http://www.rethinkdb.com"
+arch="x86_64 x86"
+license="AGPL"
+depends=""
+depends_dev="protobuf-dev icu-dev openssl-dev curl-dev boost-dev
+	libexecinfo-dev"
+makedepends="$depends_dev bash python linux-headers bsd-compat-headers m4
+	paxmark"
+install=""
+pkgusers=rethinkdb
+pkggroups=rethinkdb
+subpackages="$pkgname-doc"
+source="http://download.rethinkdb.com/dist/rethinkdb-$pkgver.tgz
+	rethinkdb.initd"
+
+_builddir="$srcdir"/rethinkdb-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--localstatedir=/var \
+		--fetch v8 \
+		--dynamic all \
+		--with-system-malloc \
+		|| return 1
+
+	local _arch
+	case $CARCH in
+		x86) _arch=ia32 ;;
+		x86_64) _arch=x64 ;;
+	esac
+
+	export LDFLAGS="$LDFLAGS -lexecinfo"
+	make || paxmark -m \
+		build/external/v8_3.30.33.16/build/out/${_arch}.release/mksnapshot
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+	install -Dm 644 "$pkgdir"/etc/rethinkdb/default.conf.sample \
+		"$pkgdir"/etc/rethinkdb/default.conf || return 1
+	sed -e 's|# directory=/var/lib/rethinkdb|directory=/var/lib/rethinkdb|' \
+		-e 's|# pid-file=/var/run/rethinkdb/rethinkdb.pid|pid-file=/var/run/rethinkdb.pid|' \
+		-e 's|# runuser=rethinkdb|runuser=rethinkdb|' \
+		-e 's|# rungroup=rethinkdb|rungroup=rethinkdb|' \
+		-i "$pkgdir"/etc/rethinkdb/default.conf || return 1
+	install -d -o $pkgname -g $pkgname "$pkgdir"/var/lib/rethinkdb || return 1
+	install -Dm755 "$srcdir"/$pkgname.initd \
+		"$pkgdir"/etc/init.d/$pkgname || return 1
+	paxmark -m "$pkgdir"/usr/bin/rethinkdb || return 1
+}
+
+md5sums="dd5a79068b14c076812436d52804f3f7  rethinkdb-2.3.1.tgz
+bb1cde2ba1d6a71ed79c31161b1bf64b  rethinkdb.initd"
+sha256sums="4a2a84a57a5a03523b66d9ec551e92d5e8bd6b04b7275db1aae890d357387ceb  rethinkdb-2.3.1.tgz
+d7294473f30cd2fa7837de6ed4816efd2c8663a15c7396d8c37a0a9f2fc1a787  rethinkdb.initd"
+sha512sums="135aeb32560d0a8721d9426456d81fbd1e07e7c2ceea6365658ca698a610534c4e1d19cceb66c1d27a023ffeab9d0b6634eef0f636799beb3ad9e59ae487ac76  rethinkdb-2.3.1.tgz
+d9997f453623e4a85e19052464d97738be70277fd14b985e9123414792b85cf5e5b30e8ecb94b48cdab43c4fb39898ca35e7fbc8943e13f95db2a992ba2289a1  rethinkdb.initd"

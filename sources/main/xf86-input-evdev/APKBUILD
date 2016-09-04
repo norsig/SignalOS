@@ -1,0 +1,35 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=xf86-input-evdev
+pkgver=2.10.3
+pkgrel=0
+pkgdesc="X.org evdev input driver"
+url="http://xorg.freedesktop.org/"
+arch="all"
+license="custom"
+subpackages="$pkgname-doc $pkgname-dev"
+depends=""
+makedepends="libxkbfile-dev xorg-server-dev libxi-dev libxrandr-dev
+	eudev-dev mtdev-dev libevdev-dev"
+source="http://xorg.freedesktop.org/releases/individual/driver/$pkgname-$pkgver.tar.bz2"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+build() {
+	cd "$_builddir"
+	export LDFLAGS="$LDFLAGS -Wl,-z,lazy"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+	install -Dm644 COPYING "$pkgdir"/usr/share/licenses/$pkgname/COPYING
+}
+
+md5sums="aa3363ce5061d0c4d1e7f7019b99716d  xf86-input-evdev-2.10.3.tar.bz2"
+sha256sums="5aa21ba4be8df927e5676a99c7f4f0343abc089f5451b7e73e39536f29b332a2  xf86-input-evdev-2.10.3.tar.bz2"
+sha512sums="8c360a0298074cd86c1f513fe95035cb2729ae3604ebabb8848956614e3b70e9295bcff3fa609178f9e7aa46ff8449494a03f711426f43c9962f4839b7796a86  xf86-input-evdev-2.10.3.tar.bz2"

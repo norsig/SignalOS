@@ -1,0 +1,38 @@
+# Contributor: William Pitcock <nenolod@dereferenced.org>
+# Maintainer: William Pitcock <nenolod@dereferenced.org>
+pkgname=fish
+pkgver=2.3.1
+pkgrel=0
+pkgdesc="a modern interactive commandline shell"
+url="http://www.fishshell.com/"
+arch="all"
+license="GPL2"
+depends=""
+depends_dev="ncurses-dev"
+makedepends="$depends_dev libtool doxygen"
+install="$pkgname.post-install $pkgname.post-upgrade $pkgname.pre-deinstall"
+subpackages="$pkgname-doc"
+source="https://github.com/fish-shell/fish-shell/releases/download/${pkgver}/${pkgname}-${pkgver}.tar.gz"
+
+builddir="$srcdir"/$pkgname-$pkgver
+build() {
+	cd "$builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--localstatedir=/var \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$builddir"
+	make install DESTDIR="$pkgdir" || return 1
+}
+
+md5sums="2d13852a5c8e9e5bca00502b93e046a4  fish-2.3.1.tar.gz"
+sha256sums="328acad35d131c94118c1e187ff3689300ba757c4469c8cc1eaa994789b98664  fish-2.3.1.tar.gz"
+sha512sums="dd0fa77f218cc84943c577ff8abafcde92fa953797757a62db317d87c2af82de6493810ce91012e20d46be9a52bffda9a40526328714ba1e4e389e5f2aa3fea5  fish-2.3.1.tar.gz"

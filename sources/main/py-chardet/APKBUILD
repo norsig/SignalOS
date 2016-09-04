@@ -1,0 +1,53 @@
+# Contributor: <xmingske@gmail.com>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+_pkgname=chardet
+pkgname=py-${_pkgname}
+pkgver=2.3.0
+pkgrel=1
+pkgdesc="The Universal Character Encoding Detector"
+url="https://github.com/chardet/chardet/"
+arch="noarch"
+license="LGPL2.1"
+makedepends="python-dev python3-dev py-setuptools"
+subpackages="py3-$_pkgname:_py3 py2-$_pkgname:_py2"
+depends=""
+source="$pkgname-$pkgver.tar.gz::https://github.com/chardet/$_pkgname/archive/${pkgver}.tar.gz"
+
+builddir="${srcdir}/${_pkgname}-${pkgver}"
+
+build() {
+	cd "$builddir"
+	python setup.py build || return 1
+	python3 setup.py build || return 1	
+}
+
+package() {
+	cd "$builddir"
+	python setup.py install --root=$pkgdir/ --optimize=1 || return 1
+	python3 setup.py install --root=$pkgdir/ --optimize=1 || return 1
+}
+
+
+_py() {
+	local python=$1
+	pkgdesc="$pkgdesc - $python"
+	install_if="$pkgname=$pkgver-r$pkgrel $python"
+	local dir=$($python -c 'import sysconfig; print(sysconfig.get_path("stdlib"))')
+
+	mkdir -p "$subpkgdir"${dir}
+	mv "$pkgdir"${dir}/* "$subpkgdir"${dir}
+}
+
+_py2() {
+	_py python2
+	replaces="$pkgname"
+}
+
+_py3() {
+	_py python3
+}
+
+
+md5sums="1ce646cc083a7bb07398588db5b90043  py-chardet-2.3.0.tar.gz"
+sha256sums="afb95679fb687fad167a714d929d033e3dd0d64b66d3646eecf117d350ae40cc  py-chardet-2.3.0.tar.gz"
+sha512sums="37f825e764754c9c697125b1faa604f92d49d578a44b5d1787c2c7cfcac73e161a371424bbaa3e692982bc7495b7a35b146e098d5069ae0e0edbd894ecacccd9  py-chardet-2.3.0.tar.gz"

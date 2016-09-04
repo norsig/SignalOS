@@ -1,0 +1,45 @@
+# Contributor: Fabian Affolter <fabian@affolter-engineering.ch>
+# Maintainer: Fabian Affolter <fabian@affolter-engineering.ch>
+pkgname=py-pillow
+_pkgname=Pillow
+pkgver=3.3.0
+pkgrel=1
+pkgdesc="A Python Imaging Library"
+url="http://python-pillow.org/"
+arch="all"
+license="PSF"
+depends="python"
+depends_dev=""
+makedepends="python-dev py-setuptools freetype-dev jpeg-dev libwebp-dev tiff-dev
+	libpng-dev lcms2-dev openjpeg-dev zlib-dev"
+install=""
+subpackages=""
+replaces="py-imaging"
+source="https://pypi.io/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.zip"
+
+_builddir="$srcdir"/$_pkgname-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	# zlib resides in lib
+	export CFLAGS="$CFLAGS -L/lib"
+	python setup.py build || return 1
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py install --prefix=/usr --root="$pkgdir" || return 1
+}
+
+md5sums="aaf059abcd174b13d90dd77b18d8e67b  Pillow-3.3.0.zip"
+sha256sums="6ac87ba1e63cbd11c9e34b5e8e962ddd0b0869d8fedafeb2f7e6d049e9153027  Pillow-3.3.0.zip"
+sha512sums="7cb5ae2727c23ce30a124c66013cd38516a298d63144ea5cae6521237fd3b5f526dce62c548cd0fe7c5a896e5046e18ce1288090097ad25d8e8a1887d551007f  Pillow-3.3.0.zip"

@@ -1,0 +1,68 @@
+# Maintainer: Leonardo Arena <rnalrd@alpinelinux.org>
+pkgname=virt-manager
+pkgver=1.4.0
+pkgrel=0
+pkgdesc="GUI for managing virtual machines"
+url="http://virt-manager.org/"
+arch="noarch"
+license="GPL2+"
+depends="python py-gobject3 gtk+3.0 vte3 py-libxml2 $pkgname-common
+	libvirt-glib spice-gtk gtk-vnc>=0.5.2-r2 libosinfo
+	ttf-dejavu gnome-icon-theme dconf"
+depends_dev="intltool"
+_common_deps="py-libxml2 py-urlgrabber py-ipaddr py-libvirt py-requests"
+makedepends="$depends_dev grep $_common_deps"
+install=
+subpackages="$pkgname-doc $pkgname-lang
+	$pkgname-common
+	virt-install:virt_install"
+source="http://virt-manager.org/download/sources/virt-manager/virt-manager-$pkgver.tar.gz
+	dont-double-create-spice-display.patch"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+prepare() {
+	cd "$_builddir"
+}
+
+build() {
+	cd "$_builddir"
+	python setup.py build || return 1
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py --no-update-icon-cache --no-compile-schemas \
+		install --prefix=/usr --root="$pkgdir" \
+		|| return 1
+}
+
+common() {
+	pkgdesc="Common files used by virt-manager and virt-install"
+	depends="$_common_deps"
+	mkdir -p "$subpkgdir"/usr/share/virt-manager "$subpkgdir"/usr/bin
+	mv "$pkgdir"/usr/share/virt-manager/virtcli \
+		"$pkgdir"/usr/share/virt-manager/virtconv \
+		"$pkgdir"/usr/share/virt-manager/virtinst \
+		"$subpkgdir"/usr/share/virt-manager || return 1
+}
+
+virt_install() {
+	pkgdesc="Utilities for installing virtual machines"
+	depends="$pkgname-common=$pkgver-r$pkgrel"
+	mkdir -p "$subpkgdir"/usr/share/virt-manager "$subpkgdir"/usr/bin
+	mv "$pkgdir"/usr/share/virt-manager/virt-install \
+		"$pkgdir"/usr/share/virt-manager/virt-clone \
+		"$pkgdir"/usr/share/virt-manager/virt-convert \
+		"$subpkgdir"/usr/share/virt-manager/ || return 1
+	mv "$pkgdir"/usr/bin/virt-install \
+		"$pkgdir"/usr/bin/virt-clone \
+		"$pkgdir"/usr/bin/virt-convert \
+		"$subpkgdir"/usr/bin/ || return 1
+}
+
+md5sums="3cb69f1d108ae6d16bab2fce7ec639ea  virt-manager-1.4.0.tar.gz
+5c5eda2c20ae89a64444515a78aefbb9  dont-double-create-spice-display.patch"
+sha256sums="bf31a40cc48500cbf87a0e93a5838fc3f6ce4e2fa03f8bce6aa2615625e6caca  virt-manager-1.4.0.tar.gz
+aae446cecfea9703df3835ebf2bc9c215328738214b13ca625fa6951628e4386  dont-double-create-spice-display.patch"
+sha512sums="6e28b0c4a91a9d96a0b5402e2af2bb0e670eb545824cf73877053c84891449bce236ffe2a79834a34d46443a7e5caa102cbbb0ac54af840a3997fbb61e155d51  virt-manager-1.4.0.tar.gz
+a0ff9479328ac4845f00454d4fc78c5ffe825de1186c4d09d7d6a06ccbbc98d965a9b281395cc8a285bf16755a1a5519466d3a0c07c25cb726d093de46496864  dont-double-create-spice-display.patch"

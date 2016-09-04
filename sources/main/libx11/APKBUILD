@@ -1,0 +1,35 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=libx11
+pkgver=1.6.3
+pkgrel=2
+pkgdesc="X11 client-side library"
+url="http://xorg.freedesktop.org/"
+arch="all"
+license="custom:XFREE86"
+depends=
+subpackages="$pkgname-dev $pkgname-doc"
+depends_dev="libxcb-dev xextproto xf86bigfontproto-dev xtrans
+	inputproto"
+makedepends="$depends_dev util-macros xproto kbproto"
+source="http://xorg.freedesktop.org/releases/individual/lib/libX11-$pkgver.tar.bz2"
+
+build() {
+	cd "$srcdir"/libX11-$pkgver
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--with-xcb \
+		|| return 1
+	make
+}
+
+package() {
+	cd "$srcdir"/libX11-$pkgver
+	make DESTDIR="$pkgdir" install || return 1
+	install -Dm644 COPYING "$pkgdir"/usr/share/licenses/$pkgname/COPYING
+}
+
+md5sums="2e36b73f8a42143142dda8129f02e4e0  libX11-1.6.3.tar.bz2"
+sha256sums="cf31a7c39f2f52e8ebd0db95640384e63451f9b014eed2bb7f5de03e8adc8111  libX11-1.6.3.tar.bz2"
+sha512sums="01bbac8075b3fdae19cacfde1c799469f06fb864235025ce444fc10a3ba079bce30f4f3527db47c5edbf91d08299c61116cdf296efa38b2034c0099fac99cc69  libX11-1.6.3.tar.bz2"

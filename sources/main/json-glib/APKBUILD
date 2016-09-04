@@ -1,0 +1,38 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=json-glib
+pkgver=1.2.2
+pkgrel=0
+pkgdesc="JSON library built on GLib"
+arch="all"
+url="http://live.gnome.org/JsonGlib"
+license="GPL"
+depends=""
+makedepends="gobject-introspection-dev glib-dev"
+subpackages="$pkgname-dev $pkgname-doc $pkgname-lang"
+source="http://ftp.gnome.org/pub/GNOME/sources/json-glib/${pkgver%.*}/json-glib-$pkgver.tar.xz"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+build() {
+	cd $srcdir/$pkgname-$pkgver
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		|| return 1
+	make
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+dev() {
+	default_dev || return 1
+	mkdir -p "$subpkgdir"/usr/
+	mv "$pkgdir"/usr/bin "$subpkgdir"/usr/
+}
+
+md5sums="c1daefb8d0fb59612af0c072c8aabb58  json-glib-1.2.2.tar.xz"
+sha256sums="ea128ab52a824fcd06e5448fbb2bd8d9a13740d51c66d445828edba71321a621  json-glib-1.2.2.tar.xz"
+sha512sums="04cbb303c4c6fc6e8af8bc25353b7aff7454250e317f29e4544e850c251aa8c6c88f81cbada8aafd42db637f5521814a86720b0784bc6f202cb222140e993bcf  json-glib-1.2.2.tar.xz"

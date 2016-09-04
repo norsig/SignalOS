@@ -1,0 +1,32 @@
+# Contributor: Michael Mason <ms13sp@gmail.com>
+# Maintainer: Michael Mason <ms13sp@gmail.com>
+pkgname=ferm
+pkgver=2.3
+_ver=$pkgver
+pkgrel=0
+pkgdesc="firewall configuration tool"
+url="http://ferm.foo-projects.org/"
+arch="noarch"
+license="GPL"
+depends="perl iptables"
+makedepends=""
+install=
+subpackages=""
+source="http://ferm.foo-projects.org/download/$_ver/$pkgname-$pkgver.tar.gz"
+
+build() {
+	return 0
+}
+
+package() {
+	cd "$srcdir/$pkgname-$pkgver"
+
+	install -m755 -D "$srcdir"/"$pkgname-$pkgver"/src/ferm \
+		"$pkgdir"/usr/sbin/"$pkgname" || return 1
+	install -m755 -D "$srcdir"/"$pkgname-$pkgver"/src/import-ferm \
+		"$pkgdir"/usr/sbin/import-ferm || return 1
+}
+
+md5sums="135c4038190a53dde1d431a0ac01de15  ferm-2.3.tar.gz"
+sha256sums="9de83d3e5f6e459f27140ae50610ed9419ac4f7b90d8d51e54c1172ea11ba64b  ferm-2.3.tar.gz"
+sha512sums="0df172fcae0d862df1d2840c401ebf5a20a609f447301c398c0d5f9992d07af23b09530f4214d3debd231f35b1d7c76324f57d134225cf884008daec1c3c76f8  ferm-2.3.tar.gz"

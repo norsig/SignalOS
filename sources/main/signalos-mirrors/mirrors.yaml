@@ -1,0 +1,5 @@
+---
+- name: repo.norsig.com
+  location: Chicago
+  urls:
+  - http://repo.norsig.com/signalos/

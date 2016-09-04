@@ -1,0 +1,69 @@
+# Contributor: Leonardo Arena <rnalrd@alpinelinux.org>
+# Maintainer: Leonardo Arena <rnalrd@alpinelinux.org>
+pkgname=pciutils
+pkgver=3.4.1
+pkgrel=1
+pkgdesc="PCI bus configuration space access library and tools"
+url="http://mj.ucw.cz/pciutils.html"
+arch="all"
+license="GPL"
+depends="hwdata-pci"
+makedepends="linux-headers"
+install=
+subpackages="$pkgname-doc $pkgname-dev $pkgname-libs"
+source="http://www.kernel.org/pub/software/utils/$pkgname/$pkgname-$pkgver.tar.gz
+	fix-linking-pci-malloc-Makefile.patch
+	pread.patch
+	"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	sed -i -e "106s/^/\#/" Makefile
+	make OPT="$CFLAGS" ZLIB=no \
+		SHARED=yes \
+		PREFIX=/usr \
+		SHAREDIR=/usr/share/hwdata \
+		MANDIR=/usr/share/man \
+		all || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make PREFIX="$pkgdir"/usr \
+		SHARED=yes \
+		SHAREDIR="$pkgdir"/usr/share/hwdata \
+		MANDIR="$pkgdir"/usr/share/man \
+		install
+	
+	install -d "$pkgdir"/usr/lib
+	ln -s libpci.so.${pkgver%%.*} "$pkgdir"/usr/lib/libpci.so || return 1
+	install -D -m 644 lib/libpci.pc "$pkgdir"/usr/lib/pkgconfig/libpci.pc \
+		|| return 1
+	for i in config.h header.h pci.h types.h; do
+		install -D -m 644 lib/${i} "$pkgdir"/usr/include/pci/${i} \
+			|| return 1
+	done
+
+}
+
+md5sums="e901d17fcc6850747f43efde4de3452b  pciutils-3.4.1.tar.gz
+f56647a25dd1cfe80f6141914c2c0591  fix-linking-pci-malloc-Makefile.patch
+c6a4ba5d34824a53cb0035bc2d1ca0f8  pread.patch"
+sha256sums="c25dabf1514eb0c4c688bcae2813350e9b1d665388840af11766fcbcb9a78fe2  pciutils-3.4.1.tar.gz
+75ff5022e6a223297aa51ffcee80e6fa58bae839d0ae3ae2861013cabce6fba8  fix-linking-pci-malloc-Makefile.patch
+8ebd84f0d84c3f2935bbe0ed9ec8c186f448803888c3791ca8e4253177c1f7f9  pread.patch"
+sha512sums="41c2c05952648ec9eb637c41419d5580c24f6479d90bbc0c0b09ec50cb228c3a2db7bd4afedbc199e8e4e49fe6052f638cb777b09b212ec0ee4b493497f4183e  pciutils-3.4.1.tar.gz
+520b39602078e4325d7dac2d460547b360f7b52c668d88cf3d776c59246c8cfcb537b7b4f50575da9d2fcea1e207b3e99626ce4f23df890d2565b7dac1db2d94  fix-linking-pci-malloc-Makefile.patch
+aa1d3272500180256929b39a5fc4ea38ddb6a9fad090d732832ded9cc396303cf56efc91cfdeb76edbcfefc9a7c8eb058562c3c2b09a9090a59d3e68c27cec62  pread.patch"

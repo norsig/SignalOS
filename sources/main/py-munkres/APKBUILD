@@ -1,0 +1,40 @@
+# Contributor: Carlo Landmeter <clandmeter@gmail.com>
+# Maintainer:
+pkgname=py-munkres
+pkgver=1.0.7
+pkgrel=0
+pkgdesc="Munkres algorithm for the assignment problem"
+url="http://bmc.github.com/munkres/"
+arch="noarch"
+license="BSD"
+depends="python"
+depends_dev=""
+makedepends="python-dev"
+install=""
+subpackages=""
+source="https://files.pythonhosted.org/packages/source/m/munkres/munkres-$pkgver.tar.gz"
+
+_builddir="$srcdir"/munkres-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	python setup.py build || return 1
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py install --prefix=/usr --root="$pkgdir" || return 1
+}
+
+md5sums="d534612326f7c7cadcfa61d109f96289  munkres-1.0.7.tar.gz"
+sha256sums="334a5d849bcefed3e4c32ecfbca4ee8dfc8ef5f2f181334d6f7f4e100b71d6c4  munkres-1.0.7.tar.gz"
+sha512sums="8618875f3aeb53fbd506bfb6de185876235c0efb33853ac9a08e4d528a4d9a7ccfa7c3eb8585dfd181b264d2456c98015e75cb36c374d51621176ca696cd3e37  munkres-1.0.7.tar.gz"

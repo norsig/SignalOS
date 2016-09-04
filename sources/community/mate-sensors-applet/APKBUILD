@@ -1,0 +1,48 @@
+# Contributor: Alan Lacerda <alacerda@alpinelinux.org>
+# Maintainer: Alan Lacerda <alacerda@alpinelinux.org>
+pkgname=mate-sensors-applet
+pkgver=1.14.0
+pkgrel=0
+pkgdesc="An applet for the MATE Panel to display readings from hardware sensors"
+url="https://github.com/mate-desktop/mate-sensors-applet"
+arch="all"
+license="GPLv2"
+depends="perl-xml-parser"
+depends_dev=""
+makedepends="$depends_dev intltool glib-dev gtk+2.0-dev mate-panel-dev libxslt-dev
+	itstool libxml2-utils mdocml-dev"
+install=""
+subpackages="$pkgname-dev $pkgname-doc $pkgname-lang"
+source="http://pub.mate-desktop.org/releases/${pkgver%.*}/$pkgname-$pkgver.tar.xz"
+
+_builddir="$srcdir/$pkgname-$pkgver"
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	 ./configure \
+                 --build=$CBUILD \
+                 --host=$CHOST \
+                 --sysconfdir=/etc \
+		 --with-gtk=2.0 \
+                 --prefix=/usr \
+                 || return 1
+         make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="${pkgdir}" install || return 1
+}
+
+md5sums="61a310a3106267ab1463e4f014ff7eda  mate-sensors-applet-1.14.0.tar.xz"
+sha256sums="f825e663d409458cc9e6c399ae78140422e3f5f225aa3bebf2e1837434da1a8f  mate-sensors-applet-1.14.0.tar.xz"
+sha512sums="8d1afdb491e3a4a72dbee098ff3383a9562ab47da81d68807cb1fe72ee9f2ccad31cbe355268d7641fc213dcabf8a4527f03e04c4d8a166584730e934f006f5f  mate-sensors-applet-1.14.0.tar.xz"

@@ -1,0 +1,63 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=aports-build
+pkgver=1.0
+pkgrel=8
+pkgdesc="MQTT based build-on-git-push scripts for Alpine Linux"
+url="http://alpinelinux.org"
+arch="noarch"
+license="GPL2"
+depends="abuild>2.20.0 mosquitto-clients alpine-sdk mqtt-exec rsync lua-aports
+	lua5.2-cjson lua5.2-mqtt-publish"
+depends_dev=""
+makedepends="$depends_dev mosquitto-dev"
+install="$pkgname.pre-install"
+subpackages=""
+
+source="aports-build
+	aports-build.initd
+	mqtt-exec.aports-build.confd
+	report-build-errors.lua
+	"
+
+_builddir=
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+}
+
+package() {
+	cd "$_builddir"
+	install -Dm755 "$srcdir"/aports-build \
+		"$pkgdir"/usr/bin/aports-build || return 1
+	install -d "$pkgdir"/etc/init.d || return 1
+
+	ln -s mqtt-exec "$pkgdir"/etc/init.d/mqtt-exec.aports-build || return 1
+	install -Dm644 "$srcdir"/mqtt-exec.aports-build.confd \
+		"$pkgdir"/etc/conf.d/mqtt-exec.aports-build || return 1
+
+	install -Dm644 "$srcdir"/report-build-errors.lua \
+		"$pkgdir"/etc/buildrepo/plugins.d/report-build-errors.lua \
+		|| return 1
+}
+
+md5sums="039ec1116bad88ea9d83654693db9ae3  aports-build
+cb4807ea64c4368487786217db087bac  aports-build.initd
+c02d90b2bb0c48e416b707caa8766c50  mqtt-exec.aports-build.confd
+ea60ae81dc6557b0312f181c8c8aeecf  report-build-errors.lua"
+sha256sums="e0336d4f1cd5d76b6b83d8add773454f725d28e841d3036e243dca144945b017  aports-build
+3e2d551f72273f37290db342a153abd377397483677a684645d22df7b8a8592f  aports-build.initd
+7d2001688c3776ffb53c422dee424bcf0346ae20f3df5c6c2f4944022b19cb4d  mqtt-exec.aports-build.confd
+b3d083ed4609ec92630819b638cd5dafdad17df68b25aa6da4c70de901910448  report-build-errors.lua"
+sha512sums="d84559c92514d49f3364f447c3b64317c3b01995963d895872f4f8dc018340bb6d3e870af2b5f4ae49180d45fbb332bf5b14028eae674b02c15285d88cf24498  aports-build
+821035bda47152c341ec94bf960fa67e3377051826712ceb74f39103e6e422777b6e082231bfb87865653d2b93b7d3154cfc24abf65a52e3e66da69412dd7e41  aports-build.initd
+93d26e2055dbb02e863bf76b64a549c100decec3fda612ce96ca1464e6d61befa9f57f202553a25cf323e67e266f532d19c7423ff070943a59b3973946d949fe  mqtt-exec.aports-build.confd
+3453e45cb687d2af6cd1c490fd5b7134f643570a84b354b57ba49295e5a0d01ef65abc0909aeb424cbe48aa280c19cc4f1dce5f4f10e5137a80395c3be00c733  report-build-errors.lua"

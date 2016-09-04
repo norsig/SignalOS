@@ -1,0 +1,49 @@
+# Contributor: Francesco Colista <fcolista@alpinelinux.org>
+# Contributor: Jakub Jirutka <jakub@jirutka.cz>
+# Maintainer: Francesco Colista <fcolista@alpinelinux.org>
+pkgname=py-lxml
+_pkgname=lxml
+pkgver=3.6.4
+pkgrel=0
+pkgdesc="Python LXML Library"
+url="http://lxml.de/"
+arch="noarch"
+license="BSD"
+depends=""
+makedepends="python2-dev python3-dev libxml2-dev libxslt-dev py-setuptools"
+subpackages="py2-$_pkgname:_py2 py3-$_pkgname:_py3"
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz"
+builddir="$srcdir/$_pkgname-$pkgver"
+
+build() {
+	cd "$builddir"
+	python2 setup.py build || return 1
+	python3 setup.py build
+}
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+_py2() {
+	replaces="$pkgname"
+	_py python2
+}
+
+_py3() {
+	_py python3
+}
+
+_py() {
+	local python="$1"
+	pkgdesc="$pkgdesc (for $python)"
+	arch="all"
+	install_if="$pkgname=$pkgver-r$pkgrel $python"
+
+	cd "$builddir"
+	$python setup.py install --prefix=/usr --root="$subpkgdir"
+}
+
+md5sums="6dd7314233029d9dab0156e7b1c7830b  lxml-3.6.4.tar.gz"
+sha256sums="61d5d3e00b5821e6cda099b3b4ccfea4527bf7c595e0fb3a7a760490cedd6172  lxml-3.6.4.tar.gz"
+sha512sums="0412b266d7a70af21f2e4e05d63c3ce63049661ef27e2bf190cbfe1e982b6980fe980a998a360796b958fa9e148ae5bb48136354d4b0bb042055340e37f61e1e  lxml-3.6.4.tar.gz"

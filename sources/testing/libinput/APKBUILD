@@ -1,0 +1,37 @@
+# Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Maintainer:
+pkgname=libinput
+pkgver=1.4.2
+pkgrel=0
+pkgdesc="Library for handling input devices"
+url="http://www.freedesktop.org/wiki/Software/libinput/"
+arch="all"
+license="custom"
+depends=""
+makedepends="mtdev-dev eudev-dev libevdev-dev grep"
+subpackages="$pkgname-dev $pkgname-doc"
+source="http://freedesktop.org/software/$pkgname/$pkgname-$pkgver.tar.xz"
+
+builddir="$srcdir/$pkgname-$pkgver"
+build() {
+	cd "$builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--localstatedir=/var \
+		--disable-libwacom \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	make DESTDIR="$pkgdir" \
+		-C "$builddir" install || return 1
+}
+
+md5sums="56b72e47362938f12ab3267cae764dd3  libinput-1.4.2.tar.xz"
+sha256sums="8c38826a785594811bef6a9daadbfa2e172e3f070f8863393d6fb7ca4c68e451  libinput-1.4.2.tar.xz"
+sha512sums="ecd1ddc737b8207d9e494f809340e2c0ac2927db80cf4c325ba12fb84387138d0128df7e841c87feafe425d6382f87f123f28531f7045fbcdd1176559895b79b  libinput-1.4.2.tar.xz"

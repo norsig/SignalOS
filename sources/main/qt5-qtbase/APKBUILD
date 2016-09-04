@@ -1,0 +1,213 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=qt5-qtbase
+pkgver=5.6.0
+_ver=${pkgver/_/-}
+_ver=${_ver/beta0/beta}
+_ver=${_ver/rc0/rc}
+_V=${_ver/rc/RC}
+pkgrel=3
+pkgdesc="Qt5 - QtBase components"
+url="http://qt-project.org/"
+arch="all"
+license="LGPLv2 with exceptions or GPLv3 with exceptions"
+_sub="$pkgname-sqlite $pkgname-odbc $pkgname-postgresql $pkgname-mysql
+	$pkgname-tds $pkgname-x11"
+depends=""
+depends_dev="mesa-dev libice-dev libsm-dev libx11-dev libxext-dev
+	openssl-dev fontconfig-dev freetype-dev glib-dev libpng-dev zlib-dev
+	sqlite-dev dbus-dev perl $_sub"
+makedepends="$depends_dev
+	bison
+	cups-dev
+	eudev-dev
+	flex
+	freetds-dev
+	gawk
+	gperf
+	gtk+2.0-dev
+	hicolor-icon-theme
+	icu-dev
+	libjpeg-turbo-dev
+	libxkbcommon-dev
+	libxi-dev
+	libxrandr-dev
+	libxrender-dev
+	libxslt-dev
+	libxv-dev
+	mariadb-dev
+	pcre-dev
+	postgresql-dev
+	unixodbc-dev
+	xcb-util-dev
+	xcb-util-image-dev
+	xcb-util-keysyms-dev
+	xcb-util-wm-dev
+	"
+install=""
+subpackages="$pkgname-dev $pkgname-doc $_sub"
+case $pkgver in
+*_beta*|*_rc*) _rel=development_releases;;
+*) _rel=official_releases;;
+esac
+source="http://download.qt-project.org/$_rel/qt/${pkgver%.*}/$_ver/submodules/qtbase-opensource-src-$_V.tar.xz
+	qt-musl-iconv-no-bom.patch
+	"
+
+_qt5_prefix=/usr/lib/qt5
+_qt5_datadir=/usr/share/qt5
+
+_builddir="$srcdir"/qtbase-opensource-src-$_V
+prepare() {
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch)
+			msg "Applying $i"
+			patch -p1 -i "$srcdir"/$i || return 1
+			;;
+		esac
+	done
+	sed -i -e "s|-O2|$CXXFLAGS|" \
+		-e "/^QMAKE_RPATH/s| -Wl,-rpath,||g" \
+		-e "/^QMAKE_LFLAGS\s/s|+=|+= $LDFLAGS|g" \
+		mkspecs/common/*.conf || return 1
+}
+
+build() {
+	local _arch
+
+	cd "$_builddir"
+
+	./configure -confirm-license -opensource \
+		-archdatadir "$_qt5_prefix" \
+		-bindir  "$_qt5_prefix"/bin \
+		-datadir "$_qt5_datadir" \
+		-dbus-linked \
+		-docdir /usr/share/doc/qt5 \
+		-examplesdir /usr/share/doc/qt5/examples \
+		-glib \
+		-gtkstyle \
+		-icu \
+		-importdir "$_qt5_prefix"/imports \
+		-largefile \
+		-libexecdir "$_qt5_prefix"/libexec \
+		-no-openvg \
+		-no-rpath \
+		-no-separate-debug-info \
+		-nomake examples \
+		-opengl \
+		-openssl-linked \
+		-optimized-qmake \
+		-plugin-sql-mysql \
+		-plugin-sql-odbc \
+		-plugin-sql-psql \
+		-plugin-sql-sqlite \
+		-plugin-sql-tds \
+		-plugindir "$_qt5_prefix"/plugins \
+		-prefix /usr \
+		-silent \
+		-sysconfdir /etc/xdg \
+		-system-libjpeg \
+		-system-libpng \
+		-system-pcre \
+		-system-sqlite \
+		-system-xcb \
+		-system-zlib \
+		-translationdir "$_qt5_datadir"/translations \
+		-no-reduce-relocations \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make INSTALL_ROOT="$pkgdir" install || return 1
+	mkdir -p "$pkgdir"/usr/bin/
+	for i in "$pkgdir"/$_qt5_prefix/bin/*; do
+		_name=${i##*/}
+		case $_name in
+		*.*)	_dest="$pkgdir"/usr/bin/${_name%.*}-qt5.${_name##*.};;
+		*)	_dest="$pkgdir"/usr/bin/${_name%.*}-qt5;;
+		esac
+		ln -s ../lib/qt5/bin/"${_name}" "$_dest"
+	done
+}
+
+_mv_files() {
+	local i
+	for i; do
+		mkdir -p "$subpkgdir"/${i%/*}
+		mv "$pkgdir"/$i "$subpkgdir"/$i || return 1
+	done
+}
+
+dev() {
+	cd "$pkgdir"
+	_mv_files usr/lib/qt5/mkspecs \
+		usr/lib/cmake \
+		usr/lib/qt5/bin \
+		usr/bin \
+		$(find usr/ -name '*.prl') \
+		|| return 1
+	default_dev
+}
+
+sqlite() {
+	pkgdesc="SQLite driver for Qt5's SQL classes"
+	cd "$pkgdir"
+	_mv_files usr/lib/qt5/plugins/sqldrivers/libqsqlite*
+}
+
+odbc() {
+	pkgdesc="ODBC driver for Qt5's SQL classes"
+	cd "$pkgdir"
+	_mv_files usr/lib/qt5/plugins/sqldrivers/libqsqlodbc*
+}
+
+postgresql() {
+	pkgdesc="PostgreSQL driver for Qt5's SQL classes"
+	cd "$pkgdir"
+	_mv_files usr/lib/qt5/plugins/sqldrivers/libqsqlpsql*
+}
+
+mysql() {
+	pkgdesc="MySQL driver for Qt5's SQL classes"
+	cd "$pkgdir"
+	_mv_files usr/lib/qt5/plugins/sqldrivers/libqsqlmysql*
+}
+
+tds() {
+	pkgdesc="TDS driver for Qt5's SQL classes"
+	cd "$pkgdir"
+	_mv_files usr/lib/qt5/plugins/sqldrivers/libqsqltds*
+}
+
+x11() {
+	pkgdesc="Qt5 GUI-related libraries"
+	depends="hicolor-icon-theme"
+	cd "$pkgdir"
+	_mv_files \
+		usr/lib/libQt5Gui.so.* \
+		usr/lib/libQt5Widgets.so.* \
+		usr/lib/libQt5OpenGL.so.* \
+		usr/lib/libQt5PrintSupport.so.* \
+		usr/lib/libQt5XcbQpa.so.* \
+		usr/lib/libQt5EglDeviceIntegration.so.* \
+		usr/lib/qt5/plugins/egldeviceintegrations \
+		usr/lib/qt5/plugins/generic \
+		usr/lib/qt5/plugins/image* \
+		usr/lib/qt5/plugins/platform* \
+		usr/lib/qt5/plugins/printsupport* \
+		usr/lib/qt5/plugins/xcbglintegrations \
+		|| return 1
+
+	scanelf -Rn usr/ | egrep '(libX|libQt5Gui|libGL)' && return 1
+	return 0
+}
+
+md5sums="d6b6cfd333c22829c6c85fc52ceed019  qtbase-opensource-src-5.6.0.tar.xz
+077e31e0cb0d25637a3b3638fffbef3c  qt-musl-iconv-no-bom.patch"
+sha256sums="6efa8a5c559e92b2e526d48034e858023d5fd3c39115ac1bfd3bb65834dbd67a  qtbase-opensource-src-5.6.0.tar.xz
+40b337c16bbb1d259f315fe5a1b110f9917223aee53b82809934efa4fa5e62a3  qt-musl-iconv-no-bom.patch"
+sha512sums="5b2a5842346475be0944fc44bc09ff5b5d5da167246310de132f034e17ebbcbbf103b6f085dbf8b566389694bd095227aa1ed569b93e0f9a8f02da51d8fe076e  qtbase-opensource-src-5.6.0.tar.xz
+a185ea5e984d2636e3f9f6c4ed8fad66a17575da0679724da60a3dc519468ab45aa9369f43ce5c64f07cb730910e36623164aefafca3aabe0359c62becca870e  qt-musl-iconv-no-bom.patch"

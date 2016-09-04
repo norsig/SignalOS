@@ -1,0 +1,30 @@
+# Maintainer: Peter Bui <pnutzh4x0r@gmail.com>
+pkgname=gcalcli
+pkgver=3.3.2
+pkgrel=0
+pkgdesc="Google Calendar Command Line Interface"
+url="https://github.com/insanum/gcalcli"
+arch="noarch"
+license="MIT"
+depends="python3 py-google-api-python-client py-dateutil py-gflags py-vobject"
+depends_dev=""
+makedepends="python-dev py-setuptools"
+install=""
+subpackages=""
+source="https://files.pythonhosted.org/packages/source/${pkgname:0:1}/$pkgname/$pkgname-$pkgver.tar.gz"
+
+builddir="$srcdir"/$pkgname-$pkgver
+
+build() {
+	cd "$builddir"
+	python3 setup.py build || return 1
+}
+
+package() {
+	cd "$builddir"
+	python3 setup.py install --prefix=/usr --root="$pkgdir" || return 1
+}
+
+md5sums="65b76ef79e3f0b0a1baa82050dbb250c  gcalcli-3.3.2.tar.gz"
+sha256sums="72d6344638bf6edfc18321d955aecbff9bb548e7cc7addab21716a01df07867b  gcalcli-3.3.2.tar.gz"
+sha512sums="73154f1d1e65b3826796eb150cc2a434feb2efdaadfb7c1cf96713ab4f99f96051de32ab975de70802271a05a1de92cd13b38c53a0e8e0d7314c563aed82c3e6  gcalcli-3.3.2.tar.gz"

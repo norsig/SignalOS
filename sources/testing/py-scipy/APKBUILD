@@ -1,0 +1,44 @@
+# Contributor: Isaac Dunham <ibid.ag@gmail.com>
+# Maintainer: Isaac Dunham <ibid.ag@gmail.com>
+pkgname=py-scipy
+pkgver=0.17.0
+pkgrel=0
+pkgdesc="Python library for scientific computing"
+url="http://www.scipy.org"
+arch="all"
+license="BSD"
+depends="python py-numpy"
+depends_dev="python-dev gfortran py-numpy-dev openblas-dev"
+makedepends="$depends_dev py-setuptools"
+install=""
+subpackages="$pkgname-dev"
+source="https://files.pythonhosted.org/packages/source/s/scipy/scipy-$pkgver.tar.gz"
+
+_builddir="$srcdir"/scipy-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	export LDFLAGS="$LDFLAGS -shared"
+	python setup.py config_fc \
+		--fcompiler=gnu95 config || return 1
+	python setup.py config_fc \
+		--fcompiler=gnu95 build || return 1
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py install --prefix=/usr --root="$pkgdir" || return 1
+}
+
+md5sums="5ff2971e1ce90e762c59d2cd84837224  scipy-0.17.0.tar.gz"
+sha256sums="f600b755fb69437d0f70361f9e560ab4d304b1b66987ed5a28bdd9dd7793e089  scipy-0.17.0.tar.gz"
+sha512sums="de6409d75a3ff3cf1e5391d3b09126f0bc7e1a40a15f9bee244195638fe2f8481fca032896d8534623e6122ff59aaf669664e27ff89cf1b094a5ce7312f220b7  scipy-0.17.0.tar.gz"

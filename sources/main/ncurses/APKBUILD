@@ -1,0 +1,99 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=ncurses
+pkgver=6.0
+pkgrel=7
+pkgdesc="Console display library"
+url="http://www.gnu.org/software/ncurses/"
+arch="all"
+license=MIT
+depends=
+makedepends_build="ncurses"
+source="http://ftp.gnu.org/pub/gnu/ncurses/ncurses-${pkgver}.tar.gz
+	"
+subpackages="$pkgname-static $pkgname-dev $pkgname-doc
+	$pkgname-terminfo-base:base $pkgname-terminfo $pkgname-libs"
+
+builddir="$srcdir"/ncurses-$pkgver
+
+build() {
+	cd "$builddir"
+
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--mandir=/usr/share/man \
+		--without-ada \
+		--disable-termcap \
+		--disable-rpath-hack \
+		--with-pkg-config-libdir=/usr/lib/pkgconfig \
+		--without-cxx-binding \
+		--with-terminfo-dirs="/etc/terminfo:/usr/share/terminfo" \
+		--enable-pc-files \
+		--with-shared \
+		--enable-widec \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$builddir"
+	make -j1 DESTDIR="$pkgdir" install || return 1
+
+	# Install basic terms in /etc/terminfo
+	for i in ansi console dumb linux rxvt screen sun vt52 vt100 vt102 \
+			vt200 vt220 xterm xterm-color xterm-xfree86; do
+		local termfile=$(find "$pkgdir"/usr/share/terminfo/ -name "$i" 2>/dev/null)
+		local basedir=$(basename $(dirname "$termfile"))
+
+		[ -z "$termfile" ] && continue
+
+		install -d "$pkgdir"/etc/terminfo/$basedir
+		mv ${termfile} "$pkgdir"/etc/terminfo/$basedir/
+		ln -s ../../../../etc/terminfo/$basedir/$i \
+			"$pkgdir"/usr/share/terminfo/$basedir/$i
+	done
+}
+
+dev() {
+	default_dev
+	# force link against *w.so
+	for lib in ncurses ncurses++ form panel menu; do
+		echo "INPUT(-l${lib}w)" > "$subpkgdir"/usr/lib/lib${lib}.so
+		ln -s ${lib}w.pc "$subpkgdir"/usr/lib/pkgconfig/${lib}.pc
+	done
+	# link curses -> ncurses
+	echo "INPUT(-lncursesw)" > "$subpkgdir"/usr/lib/libcursesw.so
+	ln -s libncurses.so "$subpkgdir"/usr/lib/libcurses.so
+}
+
+terminfo() {
+	depends="$pkgname-terminfo-base"
+	rm -rf $subpkgdir
+	mkdir -p $subpkgdir/usr/share
+	mv $pkgdir/usr/share/terminfo $subpkgdir/usr/share
+}
+
+libs() {
+	pkgdesc="Ncurses libraries"
+	depends="$pkgname-terminfo-base"
+	provides="ncurses-widec-libs=$pkgver-r$pkgrel"
+
+	mkdir -p "$subpkgdir"/usr/
+	mv "$pkgdir"/usr/lib "$subpkgdir"/usr/
+}
+
+base() {
+	pkgdesc="Descriptions of common terminals"
+	mkdir -p "$subpkgdir"/etc
+	mv "$pkgdir"/etc/terminfo "$subpkgdir"/etc/
+}
+
+static() {
+	pkgdesc="Static libraries for the ncurses library"
+	mkdir -p "$subpkgdir"/usr/lib
+	mv "$pkgdir"/usr/lib/*.a "$subpkgdir"/usr/lib/
+}
+
+md5sums="ee13d052e1ead260d7c28071f46eefb1  ncurses-6.0.tar.gz"
+sha256sums="f551c24b30ce8bfb6e96d9f59b42fbea30fa3a6123384172f9e7284bcf647260  ncurses-6.0.tar.gz"
+sha512sums="9ec194f4783dae6de8c529cac31b5cfbfcfea212c5d47b1f87cd49df013e38f8580a9e7aa1384918df0921b4ba999d5e73eb6d6362cce2d7287e64308b673963  ncurses-6.0.tar.gz"

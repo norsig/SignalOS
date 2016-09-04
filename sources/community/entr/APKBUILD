@@ -1,0 +1,43 @@
+# Contributor: Stuart Cardall <developer@it-offshore.co.uk>
+# Maintainer: Stuart Cardall <developer@it-offshore.co.uk>
+pkgname=entr
+_srcdir=eradman-$pkgname-220131754e1c
+pkgver=3.3
+pkgrel=0
+pkgdesc="Event Notify Test Runner: Run arbitrary commands when files change"
+url="http://entrproject.org"
+arch="all"
+license="ISC / BSD"
+subpackages="$pkgname-doc"
+source="http://entrproject.org/code/$pkgname-$pkgver.tar.gz
+	remove-strlcpy-compat.h.patch
+	"
+
+_builddir="$srcdir"/$_srcdir
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure || return 1
+	CFLAGS="-static" make test || return 1
+}
+
+package() {
+	cd "$_builddir"
+	PREFIX="$pkgdir/usr" make install || return 1
+}
+
+md5sums="769f353934b73e929a0a0fb9fca79c41  entr-3.3.tar.gz
+5ae5aa6f2b8de9747312b32b17c56d0b  remove-strlcpy-compat.h.patch"
+sha256sums="701cb7b0a72b6c9ba794ad7cc15b6ebcc2e0c978bb6906c8ae407567a044461f  entr-3.3.tar.gz
+2bc42c8c154acf0aaa876b4395c2e0e7b20773e48d50b0c8a15e90ca2e8db472  remove-strlcpy-compat.h.patch"
+sha512sums="aa45bef57fb12d5ddaaebd8de03df33b69a833e4b729ad9fb0844af1c8b7031fc37ca1c81170b20967aa7dbf8854849a7b1f46da6d1d13a49d4d33502269bbca  entr-3.3.tar.gz
+9d0f4e06cd5c312788f5ff2efa13f55f78a3491de3ddf64612a6c731072e8514deb1cea48c630194cbda71c58c57e9a6b937172eca58be0b1fb4f0f7a1652e2d  remove-strlcpy-compat.h.patch"

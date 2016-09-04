@@ -1,0 +1,46 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=glm
+pkgver=0.9.7.5
+pkgrel=0
+pkgdesc="C++ mathematics library for graphics programming"
+url="http://glm.g-truc.net/"
+arch="all"
+license="MIT"
+depends=""
+depends_dev=""
+makedepends="$depends_dev cmake"
+install=""
+subpackages="$pkgname-dev"
+source="https://github.com/g-truc/glm/releases/download/$pkgver/glm-$pkgver.zip"
+
+_builddir="$srcdir"/glm
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	mkdir build
+	cd build
+	cmake .. \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		|| return 1
+	make
+}
+
+package() {
+	cd "$_builddir"/build
+	make install DESTDIR="$pkgdir"
+}
+
+md5sums="8d8da9c561e43c975946be9c6d37935d  glm-0.9.7.5.zip"
+sha256sums="f39a908c6519e70ea1e91a8732e69aed84d28c46bc01cc3dedf71ca88b06716f  glm-0.9.7.5.zip"
+sha512sums="860a9196dc109b203a2d78bd7c39f505b13ef9c6a747187eb2676272bb60f0c311cb86fa80b2a3e8845d61ef27129d781f02b93cb3bc6a1a876c25ca5813cb2a  glm-0.9.7.5.zip"

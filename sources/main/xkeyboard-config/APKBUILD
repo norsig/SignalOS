@@ -1,0 +1,49 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=xkeyboard-config
+pkgver=2.18
+pkgrel=0
+pkgdesc="X keyboard configuration files"
+url="http://www.freedesktop.org/wiki/Software/XKeyboardConfig"
+arch="noarch"
+license="custom"
+depends=
+subpackages=
+makedepends="xkbcomp intltool libx11-dev"
+source="http://xorg.freedesktop.org/archive/individual/data/xkeyboard-config/xkeyboard-config-$pkgver.tar.bz2
+	"
+
+_builddir="$srcdir/$pkgname-$pkgver"
+
+prepare() {
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--with-xkb-base=/usr/share/X11/xkb \
+		--with-xkb-rules-symlink=xorg \
+		--enable-compat-rules=yes \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+	rm -f "$pkgdir"/usr/share/X11/xkb/compiled || return 1
+	install -m755 -d "$pkgdir"/var/lib/xkb
+	install -Dm644 COPYING "$pkgdir"/usr/share/licenses/$pkgname/COPYING
+}
+md5sums="c28cf45616bfec276879360bc36c6b27  xkeyboard-config-2.18.tar.bz2"
+sha256sums="c41d917d6c8a59feb7ccbda51c40a6ada824fdd1e9684b52dd48c9530617ddd0  xkeyboard-config-2.18.tar.bz2"
+sha512sums="5415fadf66a8e2b671029f4d1cd6726a522d347abe87a0f4f33fa85662dd2dc2348fc7402c53281ad2a8615c61eb447760d16d7dac426df19d0834d05b81f548  xkeyboard-config-2.18.tar.bz2"

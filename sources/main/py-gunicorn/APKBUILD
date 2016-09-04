@@ -1,0 +1,38 @@
+# Contributor: <xmingske@gmail.com>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+_pkgname=gunicorn
+pkgname=py-${_pkgname}
+pkgver=19.6.0
+pkgrel=0
+pkgdesc="a Python WSGI HTTP Server"
+url="https://github.com/benoitc/gunicorn/"
+arch="noarch"
+license="BSD"
+makedepends="python-dev py-setuptools"
+source="$pkgname-$pkgver.tar.gz::https://github.com/benoitc/$_pkgname/archive/${pkgver}.tar.gz"
+
+_builddir="${srcdir}/${_pkgname}-${pkgver}"
+
+prepare() {
+	local pf
+	cd "${_builddir}"
+	for pf in $source; do
+		case $pf in
+		*.patch) msg $pf; patch -p1 -i "$srcdir"/${pf} || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "${_builddir}"
+	python setup.py build || return 1
+}
+
+package() {
+	cd "${_builddir}"
+	python setup.py install --prefix=/usr --root="$pkgdir" || return 1
+}
+
+md5sums="611d8b12c5f919a5c916dc6e563b9523  py-gunicorn-19.6.0.tar.gz"
+sha256sums="1e0de4957bea60bfcff5215664bdfc3cf02c78e2aae9586766a9b4b437aebbb0  py-gunicorn-19.6.0.tar.gz"
+sha512sums="5406fceadcf6651aa802c91179465cd163ecc6a27e4a4d69cc5276cdd84b2fcabfc2a9578eb0ee39b71d770f88b52ebb21dd620aa1d55d297ba54deffdc2d36e  py-gunicorn-19.6.0.tar.gz"

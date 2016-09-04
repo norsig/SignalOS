@@ -1,0 +1,69 @@
+# Maintainer: Kurt Marasco <celilo@lavabit.com>
+# Contributor: Pascal Ernster <aur at hardfalcon dot net>
+
+pkgname=hiawatha
+pkgver=10.3
+pkgrel=0
+pkgdesc='Secure and advanced webserver'
+url='https://www.hiawatha-webserver.org/'
+arch=all
+license='GPL'
+options="suid"
+subpackages="$pkgname-doc"
+makedepends="cmake libxml2-dev libxslt-dev mbedtls-dev"
+source="https://hiawatha-webserver.org/files/$pkgname-$pkgver.tar.gz
+        hiawatha.initd
+        hiawatha.conf.sample"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+prepare() {
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+build() {
+  cd "$srcdir"/$pkgname-$pkgver
+
+  cmake . -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_INSTALL_BINDIR=/usr/bin \
+    -DCMAKE_INSTALL_SBINDIR=/usr/sbin \
+    -DCMAKE_INSTALL_SYSCONFDIR=/etc/hiawatha \
+    -DCMAKE_INSTALL_LIBDIR=/usr/lib \
+    -DCMAKE_INSTALL_MANDIR=/usr/share/man \
+    -DCONFIG_DIR=/etc/hiawatha \
+    -DLOG_DIR=/var/log/hiawatha \
+    -DPID_DIR=/var/run \
+    -DUSE_SYSTEM_MBEDTLS=ON \
+    -DWEBROOT_DIR=/var/www/hiawatha \
+    -DWORK_DIR=/var/lib/hiawatha || return 1
+
+    make || return 1
+}
+
+package() {
+  cd "$srcdir"/$pkgname-$pkgver
+  make DESTDIR="$pkgdir/" install || return 1
+
+  sed -i 's|#ServerId = www-data|ServerId = nobody|' \
+    "$pkgdir"/etc/hiawatha/hiawatha.conf || return 1
+  sed -i 's|www-data|nobody|g' logrotate.d/hiawatha || return 1
+  install -Dm644 logrotate.d/hiawatha \
+    "$pkgdir"/etc/logrotate.d/hiawatha || return 1
+  install -Dm755 "$srcdir"/hiawatha.initd \
+    "$pkgdir"/etc/init.d/hiawatha || return 1
+  install -Dm644 "$srcdir"/hiawatha.conf.sample \
+    "$pkgdir"/usr/share/doc/hiawatha/hiawatha.conf.sample || return 1
+}
+
+md5sums="31567dfc18d435bd419be279f7970019  hiawatha-10.3.tar.gz
+a3481042b75637e1b71dee531f29a98d  hiawatha.initd
+fb24fcbfa820a5b85f6c4c8a520a6920  hiawatha.conf.sample"
+sha256sums="99d185fb16bb1ab706724494d3cac86464f1485ed4b0fff09a192eca6da5ff8e  hiawatha-10.3.tar.gz
+eb15090af441fce68115b22c99a23fd80d15c031d1b0d83abd36aaf1191e2230  hiawatha.initd
+4671d2586cbe3cd6497b16ff422c6143cdab40641ef3c9c4988c478351a8f5e7  hiawatha.conf.sample"
+sha512sums="628b8042f732c02eb86d98798078c93cafeadaee1adaebed41a2e40b3c8efb8a1f281403125568d207d8326354dbbb651f6894a69f44142ced5f407d576c725b  hiawatha-10.3.tar.gz
+4e1201110396e13b979948caae9c2dfb34f55398225d924164d2f0818b6778500ef3426b0ad358210ef7780289fbd752f7e006220941437fbcdd378746bf5a3d  hiawatha.initd
+b2aad6d02e03a3e25dc6dc30deab4637a7de5448255b6b707363e8c71ae1029e669bacdb6b88889ec1aa804fe717560e872dc44d049127af9aa155a8895c8a60  hiawatha.conf.sample"

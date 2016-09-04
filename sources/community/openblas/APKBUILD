@@ -1,0 +1,106 @@
+# Contributor: Isaac Dunham <ibid.ag@gmail.com>
+# Contributor: Jakub Jirutka <jakub@jirutka.cz>
+# Maintainer: Isaac Dunham <ibid.ag@gmail.com>
+pkgname=openblas
+_pkgname=OpenBLAS
+pkgver=0.2.18
+pkgrel=3
+pkgdesc="A fast BSD-licensed BLAS based on gotoBLAS2, with LAPACK"
+url="http://www.openblas.net"
+arch="all"
+license="BSD"
+depends=""
+depends_dev="gfortran"
+makedepends="$depends_dev perl linux-headers"
+subpackages="$pkgname-dev $pkgname-doc"
+source="$pkgname-$pkgver.tar.gz::http://github.com/xianyi/$_pkgname/archive/v$pkgver.tar.gz
+	0001-Use-strsignal-instead-of-sys_siglist.patch
+	"
+builddir="$srcdir/$_pkgname-$pkgver"
+_builddir64="$builddir-64"
+
+# USE_OPENMP=0: see GCC bug 60035
+# NO_AFFINITY: don't expect to work on musl, also breaks R and not
+#              recommended for Julia
+_flags="USE_OPENMP=0
+	NO_LAPACK=0
+	MAJOR_VERSION=3
+	NO_AFFINITY=1
+	"
+case "$CARCH" in
+x86_64 | aarch64)
+	subpackages="$subpackages $pkgname-ilp64"
+	_flags="$_flags NUM_THREADS=32"  # match kernel's CONFIG_NR_CPUS
+	_ilp64=true
+;;
+*)
+	_flags="$_flags NUM_THREADS=8"  # 32bit machines usually have less cores
+	_ilp64=false
+;;
+esac
+
+# DYNAMIC_ARCH is supported on x86* only, see https://github.com/xianyi/OpenBLAS/issues/709
+case "$CARCH" in
+x86*) _flags="$_flags TARGET=core2 DYNAMIC_ARCH=1";;
+armhf) _flags="$_flags TARGET=ARMV7 DYNAMIC_ARCH=0";;
+aarch64) _flags="$_flags TARGET=ARMV8 DYNAMIC_ARCH=0";;
+*) _flags="$_flags DYNAMIC_ARCH=0";;
+esac
+
+# Flags for ILP64 variant.
+_flags64="$_flags
+	INTERFACE64=1
+	SYMBOLSUFFIX=64_"
+
+prepare() {
+	default_prepare || return 1
+
+	cp -ar "$builddir" "$_builddir64"
+}
+
+build() {
+	CFLAGS= make -C "$builddir" \
+		$_flags CFLAGS="$CFLAGS" PREFIX=/usr || return 1
+
+	if $_ilp64; then
+		msg "Building with ILP64..."
+		CFLAGS= make -C "$_builddir64" \
+			$_flags64 CFLAGS="$CFLAGS" PREFIX=/usr || return 1
+	fi
+}
+
+package() {
+	if $_ilp64; then
+		make -C "$_builddir64" $_flags64 \
+			PREFIX="$pkgdir/usr" install || return 1
+	fi
+
+	cd "$builddir"
+
+	make $_flags PREFIX="$pkgdir/usr" install || return 1
+
+	# Remove reference to $pkgdir.
+	sed -i "s|$pkgdir||" "$pkgdir"/usr/lib/cmake/$pkgname/OpenBLASConfig.cmake
+
+	mkdir -p "$pkgdir"/usr/share/doc/$pkgname
+	install -m 0644 Changelog.txt TargetList.txt USAGE.md \
+		"$pkgdir"/usr/share/doc/$pkgname/ || return 1
+
+	install -Dm 0644 LICENSE \
+		"$pkgdir"/usr/share/licenses/$pkgname/LICENSE
+}
+
+ilp64() {
+	pkgdesc="$pkgdesc (ILP64)"
+	arch="x86_64 aarch64"
+
+	mkdir -p "$subpkgdir"/usr/lib
+	mv "$pkgdir"/usr/lib/libopenblas64_* "$subpkgdir"/usr/lib/
+}
+
+md5sums="805e7f660877d588ea7e3792cda2ee65  openblas-0.2.18.tar.gz
+ddce6ae8c2af85ebdd14e9150960d1c6  0001-Use-strsignal-instead-of-sys_siglist.patch"
+sha256sums="7d9f8d4ea4a65ab68088f3bb557f03a7ac9cb5036ef2ba30546c3a28774a4112  openblas-0.2.18.tar.gz
+4e662d5dd5d03e0067c856d3c359d4306a8fb1ad66c2a70a7cf851decf5fdea3  0001-Use-strsignal-instead-of-sys_siglist.patch"
+sha512sums="224990959ead6247613519f52447c31968170349a0040e746862b948c851166499050f5db7cefc66f9c1695262457980ae8d0e49b14f3442267f2a43f5a14e47  openblas-0.2.18.tar.gz
+d3dd7cad2c0bc5414642cf51a46bc57e681c4449bd829bf304c743c44c53f29d90ba0c43233bf5a7cce3e6b057d1c1cef27d0ccffecb50125993b34c913477c8  0001-Use-strsignal-instead-of-sys_siglist.patch"

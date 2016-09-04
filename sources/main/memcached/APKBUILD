@@ -1,0 +1,58 @@
+# Contributor: Jeff Bilyk <jbilyk@alpinelinux.org>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=memcached
+pkgver=1.4.31
+pkgrel=0
+pkgdesc="Distributed memory object caching system"
+url="http://memcached.org"
+arch="all"
+license="BSD"
+depends=
+depends_dev="libevent-dev"
+makedepends="$depends_dev"
+install="$pkgname.pre-install"
+subpackages="$pkgname-dev $pkgname-doc"
+source="http://www.memcached.org/files/memcached-$pkgver.tar.gz
+	$pkgname.confd
+	$pkgname.initd"
+
+_builddir="$srcdir/$pkgname-$pkgver"
+
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+        install -m755 -D "$srcdir/$pkgname.initd" \
+		"$pkgdir/etc/init.d/$pkgname" || return 1
+	install -m644 -D "$srcdir/$pkgname.confd" \
+		"$pkgdir/etc/conf.d/$pkgname" || return 1
+}
+
+md5sums="c19bb0e77e720f64f33ecb43de28a1b4  memcached-1.4.31.tar.gz
+a7aa37e91d4237448124b79bd99a2649  memcached.confd
+220c0331832edcef6a72601143d3172d  memcached.initd"
+sha256sums="77ce5f820bafe94c33bf7bd86268d9bcdb3b76f68128d795b106db53d528707f  memcached-1.4.31.tar.gz
+c8f03585eeeb0e0acf4e8bb3c0f7062c2c7da5f89e763cf91a856bec4991a2c7  memcached.confd
+da8a0e9a580d2df053941f01ce430aa5b678270891b481c710758b81fb4d831c  memcached.initd"
+sha512sums="0e3faf7f574599d06df6764c98e0f01f3ed64c480efdc59ed01975e6149a836a1d47844ed9c1824a596ae1c42c1c5e36fd64692399d1073c120ea97a655c3532  memcached-1.4.31.tar.gz
+31bd788433b8021ed332f86d291e7f03222ae234520e52ba673b581d5da2adf5656e8f73e8b985df73258dea9b2a1b8ef36195163fe47a92fda59825deedfed4  memcached.confd
+9615769b14175a25b50c9871b48c0635b5397ebe45231b43ee29a603eceb7b16bfc5ac744017b89b19082209c09597b3038a03ed0d5d9b45c60454d5b2717a55  memcached.initd"

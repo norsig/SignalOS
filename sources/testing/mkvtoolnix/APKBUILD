@@ -1,0 +1,42 @@
+# Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Contributor: Carlo Landmeter <clandmeter@gmail.com>
+# Maintainer: Francesco Colista <fcolista@alpinelinux.org>
+pkgname=mkvtoolnix
+pkgver=9.1.0
+pkgrel=1
+pkgdesc="Set of tools to create, edit and inspect Matroska files"
+url="https://mkvtoolnix.download/index.html"
+arch="all"
+license="GPL"
+depends=""
+depends_dev=""
+makedepends="libmatroska-dev flac-dev libvorbis-dev boost-dev
+	zlib-dev file-dev libogg-dev ruby-rake ruby-json bash"
+install=""
+subpackages="$pkgname-doc"
+source="https://mkvtoolnix.download/sources/$pkgname-$pkgver.tar.xz"
+
+builddir="$srcdir"/$pkgname-$pkgver
+build() {
+	cd "$builddir"
+	./configure CC="${CC:-gcc}" CFLAGS="${CFLAGS}" \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--localstatedir=/var \
+		--without-curl \
+		--without-gettext \
+		|| return 1
+	./drake V=1 -j${JOBS} || return
+}
+
+package() {
+	cd "$builddir"
+	./drake DESTDIR="$pkgdir" install || return 1
+}
+
+md5sums="7eafd6f5a9affd35f9cbf607d8ccf9b3  mkvtoolnix-9.1.0.tar.xz"
+sha256sums="1471370251ff8414f3c02a0e21ec41c644f9d54bf4f1f5253d0cd9406281ce60  mkvtoolnix-9.1.0.tar.xz"
+sha512sums="6a5cb169ddce95e8e525df23c2e84075ec8cdcbcd72755214c40744856378f02b98b313a01b2456f6eeac83d2ba5125aee42c63104113e7c736e7b48442c591e  mkvtoolnix-9.1.0.tar.xz"

@@ -1,0 +1,76 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=dbus
+pkgver=1.10.8
+pkgrel=1
+pkgdesc="Freedesktop.org message bus system"
+url="http://www.freedesktop.org/Software/dbus"
+pkggroups="messagebus"
+arch="all"
+license="GPL custom"
+subpackages="$pkgname-dev $pkgname-doc $pkgname-libs $pkgname-x11"
+triggers="$pkgname.trigger=/etc/dbus-1/system.d"
+depends=
+depends_dev="util-linux-dev"
+makedepends="$depends_dev expat-dev libx11-dev autoconf automake libtool"
+install="$pkgname.pre-install $pkgname.post-install"
+source="http://dbus.freedesktop.org/releases/dbus/dbus-$pkgver.tar.gz
+	fix-int64-print.patch
+	$pkgname.initd
+	"
+
+prepare() {
+	default_prepare
+	autoreconf -vif
+}
+
+build() {
+	cd "$srcdir"/$pkgname-$pkgver
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--localstatedir=/var \
+		--with-xml=expat \
+		--with-dbus-user=messagebus \
+		--with-system-pid-file=/var/run/dbus.pid \
+		--disable-verbose-mode \
+		--disable-static \
+		--enable-inotify \
+		--disable-dnotify \
+		--disable-tests \
+		--disable-asserts \
+		--with-x \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$srcdir"/$pkgname-$pkgver
+	make -j1 DESTDIR="$pkgdir" install || return 1
+	install -Dm755 "$srcdir"/dbus.initd "$pkgdir"/etc/init.d/dbus
+}
+
+libs() {
+	pkgdesc="Libraries for acces D-BUS"
+	replaces="dbus"
+	mkdir -p "$subpkgdir"/usr/lib
+	mv "$pkgdir"/usr/lib/lib*.so.* "$subpkgdir"/usr/lib/
+}
+
+x11() {
+	pkgdesc="X11-requiring add-ons for D-BUS"
+	depends="dbus=$pkgver-r$pkgrel"
+	mkdir -p "$subpkgdir"/usr/bin
+	mv "$pkgdir"/usr/bin/dbus-launch "$subpkgdir"/usr/bin/
+}
+
+md5sums="e912e930f249454752512aa7ac864d43  dbus-1.10.8.tar.gz
+3e542be1998d3d0d9186ab4decdc035a  fix-int64-print.patch
+fc7a1faf3ce3cc311ddb4e6494a18cd1  dbus.initd"
+sha256sums="baf3d22baa26d3bdd9edc587736cd5562196ce67996d65b82103bedbe1f0c014  dbus-1.10.8.tar.gz
+ef3af1ee272b1e350ca35ca41d55adefc77a54249097156aaac51cba3ee4cb0b  fix-int64-print.patch
+30084902702e1de4ba7447e63c6b392f56bfbb87f846e5e9659c4e80e93121fe  dbus.initd"
+sha512sums="becc6c27b81a716ca498f3cdce2dae9fe5b39d7d334f66a9eae7ae8ce6448ea8c5fdfc500138371992828693a2f8f3a503efb147e163103aa64eac9b4bcf9906  dbus-1.10.8.tar.gz
+5f07d8cb377ab80c927a77236c3f3437f08351161e594c62a1ad43f0324c2dba3cc98d50257ae27b9a4f5148571c5f26f35db8b40f13c72e92f267d5356c87f0  fix-int64-print.patch
+df74e7d6a4f76f777d356e94bd23422b17656aa51a5b2d3c655fcabb32c84f2f06b9f5cd8827920d51842f89e8c0d968a6e723315e4bf216e55711fcda9b0ee9  dbus.initd"

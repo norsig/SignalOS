@@ -1,0 +1,49 @@
+# Contributor: Carlo Landmeter <clandmeter@gmail.com>
+# Maintainer: Carlo Landmeter <clandmeter@gmail.com>
+pkgname=lua-inspect
+pkgver=3.0.3
+_luaversions="5.1 5.2 5.3"
+pkgrel=0
+pkgdesc="Human-readable representation of Lua tables"
+url="https://github.com/kikito/inspect.lua"
+arch="noarch"
+license="MIT"
+depends=""
+depends_dev=""
+makedepends="$depends_dev"
+install=""
+subpackages="$pkgname-doc"
+source="$pkgname-$pkgver.tar.gz::https://github.com/kikito/inspect.lua/archive/v$pkgver.tar.gz"
+for _v in $_luaversions; do
+        subpackages="$subpackages lua$_v-${pkgname#*lua-}:split_${_v/./_}"
+done
+
+_builddir="$srcdir/inspect.lua-$pkgver"
+build() {
+	return 0
+}
+
+package() {
+	cd "$_builddir"
+	install -Dm644 README.md \
+		"${pkgdir}/usr/share/doc/${pkgname}/README.md"
+	install -Dm644 MIT-LICENSE.txt \
+		"${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}
+
+_split() {
+	cd "$_builddir"
+	local _ver="$1"
+	install_if="lua$_ver $pkgname=$pkgver-r$pkgrel"
+	pkgdesc="Human-readable representation of Lua $_ver tables"
+	install -Dm644 inspect.lua \
+		"$subpkgdir/usr/share/lua/$_ver/inspect.lua" || return 1
+}
+
+for _v in $_luaversions; do
+        eval "split_${_v/./_}() { _split $_v; }"
+done
+
+md5sums="9338310f2eac43ad53699371f710fcda  lua-inspect-3.0.3.tar.gz"
+sha256sums="7a862491299fdc6c094f0e9e6b7db712f86981be91f7e2d4b1843488ff03c9a2  lua-inspect-3.0.3.tar.gz"
+sha512sums="6b7f0c4d7c035b63f50e6b616e6395f0fb5a84c8e41dee44e19604d0953c6102362d22259a4345209f2692adca11544b7b028a9ff2b8f6e6b751c004df4bc0f1  lua-inspect-3.0.3.tar.gz"

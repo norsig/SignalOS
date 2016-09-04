@@ -1,0 +1,42 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=libmpdclient
+pkgver=2.10
+pkgrel=0
+pkgdesc="An asynchronous API library for interfacing MPD in the C, C++ & Objective C languages"
+url="http://mpd.wikia.com/wiki/Client:libmpdclient"
+arch="all"
+license="GPL2"
+depends=
+makedepends="doxygen"
+subpackages="$pkgname-dev $pkgname-doc"
+source="http://www.musicpd.org/download/libmpdclient/${pkgver%.*}/libmpdclient-$pkgver.tar.xz
+	"
+
+_builddir="$srcdir/$pkgname-$pkgver"
+
+prepare() {
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() { 
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+md5sums="00606c630b905aa6196330373b366c29  libmpdclient-2.10.tar.xz"
+sha256sums="4f08cde82dae70895f8e4532a6e9b54b201efd5591c6b5d6834895807ed2ff82  libmpdclient-2.10.tar.xz"
+sha512sums="f54fc3501643ece4eee2f63ddbf5f3d676f3843be0859f482d70cc142b6d9dfbdebd511ccc52a9c058a644e3b80c93a680e1de19f6f3ebfc46cb197f0ddddb5b  libmpdclient-2.10.tar.xz"

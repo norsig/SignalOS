@@ -1,0 +1,71 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+
+_flavor=grsec
+_kpkg=linux-$_flavor
+_kver=4.4.19
+_kpkgrel=0
+_mypkgrel=0
+
+_kpkgver="$_kver-r$_kpkgrel"
+_abi_release=${_kver}-${_kpkgrel}-${_flavor}
+_realname=devicemaster-linux
+
+pkgname=${_realname}-${_flavor}
+pkgver=$_kver
+# when changing _realver we *must* bump _mypkgrel
+_realver=7.11
+pkgrel=$(( $_kpkgrel + $_mypkgrel ))
+pkgdesc="NS-Link Device Drivers $_realver for linux-$_flavor"
+url="http://www.comtrol.com/resources/product-resources-white-papers/ns-link-device-drivers"
+arch="x86 x86_64 armhf"
+license="GPL"
+depends="linux-${_flavor}=${_kpkgver}"
+makedepends="linux-${_flavor}-dev=${_kpkgver} linux-headers"
+install=
+install_if="$_kpkg=$_kpkgver $_realname"
+subpackages=""
+source="http://dev.alpinelinux.org/archive/devicemaster-linux/devicemaster-linux-$_realver.tar.gz
+	nslink.patch
+	"
+
+prepare() {
+	# verify the kernel version
+	(if [ -f ../../main/linux-${_flavor}/APKBUILD ]; then
+		_name=$pkgname
+		. ../../main/linux-${_flavor}/APKBUILD
+		pkgname=$_name
+		[ "$_kver" != "$pkgver" ] \
+			&& die "please update _kver to $pkgver"
+		[ "$_kpkgrel" != "$pkgrel" ] \
+			&& die "please update _kpkgrel to $pkgrel"
+	fi) || return 1
+
+	cd "$srcdir/$_realname-$_realver"
+	for i in $source; do
+		case $i in
+		*.patch|*.diff)
+			msg "Applying $i"
+			patch -p1 -i "$srcdir"/$i || return 1
+			;;
+		esac
+	done
+}
+
+build() {
+	cd "$srcdir/$_realname-$_realver"
+	make -C /lib/modules/$_abi_release/build SUBDIRS="$PWD" modules \
+		KCFLAGS="-fno-pie" V=1 || return 1
+}
+
+package() {
+	cd "$srcdir/$_realname-$_realver"
+	mkdir -p "$pkgdir/lib/modules/${_abi_release}/misc/"
+	cp *.ko "$pkgdir/lib/modules/${_abi_release}/misc/" || return 1
+}
+
+md5sums="0e79cf4afe5503087454d052f33847a9  devicemaster-linux-7.11.tar.gz
+93304a282dab87658481fdce61d97f5c  nslink.patch"
+sha256sums="9901966cf6a696f07a7d3f79c8fc5d6dbc5340fd36ea785cf27577b1fcadfc04  devicemaster-linux-7.11.tar.gz
+bb875877b13fb5a477598b17c94f0b8f3e08812c37d90db63fcb7de78554ddff  nslink.patch"
+sha512sums="dade8220f25c32e38520fd9267f18f2af0bcc14e84b422f77d6cdf7a23d4f14512182176039686ec898d6e4c390751318bc0c7aa7f74e4aa9a94d411b3c774d8  devicemaster-linux-7.11.tar.gz
+f3549770d7253595d51466973d112a1b63c3aad9b73cb3033718031327bfd4ac6f182540bc6a9c44a0919431b3ffa38c382923874a9f8c856a194ab768464fe7  nslink.patch"

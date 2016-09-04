@@ -1,0 +1,34 @@
+# Contributor: Leonardo Arena <rnalrd@alpinelinux.org>
+# Maintainer:  Leonardo Arena <rnalrd@alpinelinux.org>
+pkgname=perl-net-dns
+_realname=Net-DNS
+pkgver=1.05
+pkgrel=0
+pkgdesc="Perl interface to the DNS resolver"
+url="http://www.net-dns.org/"
+arch="noarch"
+license="GPL+ or Artistic"
+depends="perl"
+makedepends="perl-dev"
+install=""
+subpackages="$pkgname-doc"
+source="http://www.cpan.org/authors/id/N/NL/NLNETLABS/${_realname}-$pkgver.tar.gz"
+source="http://search.cpan.org/CPAN/authors/id/N/NL/NLNETLABS/$_realname-$pkgver.tar.gz"
+
+_builddir="$srcdir/$_realname-$pkgver"
+build() {
+	cd "$_builddir"
+	PERL_MM_USE_DEFAULT=1 perl Makefile.PL INSTALLDIRS=vendor || return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install
+        # creates file collision among perl modules
+	find "$pkgdir" \( -name perllocal.pod -o -name .packlist \) -delete
+}
+
+md5sums="3e229b4c72e25f850af9dea9ba5082bd  Net-DNS-1.05.tar.gz"
+sha256sums="900198014110af96ebac34af019612dd2ddd6af30178600028c3c940d089d5c8  Net-DNS-1.05.tar.gz"
+sha512sums="8b2ec95b3996fa981c8c1687c56bab3e5eb53ca7d591c3c0579f84325290bdd79d66de5514e256a6e599236979653fa498f30649599866f2caaf1d4dc776a386  Net-DNS-1.05.tar.gz"

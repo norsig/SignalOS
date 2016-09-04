@@ -1,0 +1,48 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=qt5-qtgraphicaleffects
+pkgver=5.6.0
+_ver=${pkgver/_/-}
+_ver=${_ver/beta0/beta}
+_ver=${_ver/rc0/rc}
+_V=${_ver/rc/RC}
+pkgrel=0
+pkgdesc="Qt5 - QtGraphicalEffects component"
+url="http://qt-project.org/"
+arch="all"
+license="LGPLv2 with exceptions or GPLv3 with exceptions"
+depends=""
+depends_dev=""
+makedepends="$depends_dev qt5-qtbase-dev qt5-qtdeclarative-dev"
+install=""
+subpackages=""
+case $pkgver in
+*_beta*|*_rc*) _rel=development_releases;;
+*) _rel=official_releases;;
+esac
+source="http://download.qt-project.org/$_rel/qt/${pkgver%.*}/$_ver/submodules/qtgraphicaleffects-opensource-src-$_V.tar.xz"
+
+_qt5_prefix=/usr/lib/qt5
+_builddir="$srcdir"/qtgraphicaleffects-opensource-src-$_V
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	qmake-qt5 && make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make install INSTALL_ROOT="$pkgdir" || return 1
+}
+
+md5sums="6132524e7dbceb3ea634200d4d7cf235  qtgraphicaleffects-opensource-src-5.6.0.tar.xz"
+sha256sums="01e911fdcf85a13b927cba341d15a0baeead3eba85c4532b1b45bb5c334416e8  qtgraphicaleffects-opensource-src-5.6.0.tar.xz"
+sha512sums="a02bfd2ff57f5bb1b89e40043f5663dc2fc8a810c25fe23330d3aaf2569fb4a6f76fbf97c244e18a1f27900bfe66e0eb935b5b8a3431d64b1bf0413bdda46c09  qtgraphicaleffects-opensource-src-5.6.0.tar.xz"

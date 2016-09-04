@@ -1,0 +1,57 @@
+# Contributor: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=libdc1394
+pkgver=2.2.4
+pkgrel=0
+pkgdesc="High level programming interface to control IEEE 1394 based cameras"
+url="http://damien.douxchamps.net/ieee1394/libdc1394/"
+arch="all"
+license="LGPL"
+depends=
+depends_dev="libusb-dev libraw1394-dev"
+makedepends="$depends_dev linux-headers"
+install=""
+subpackages="$pkgname-dev $pkgname-doc"
+source="http://downloads.sourceforge.net/project/libdc1394/libdc1394-2/$pkgver/libdc1394-$pkgver.tar.gz"
+
+_builddir="$srcdir"/libdc1394-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--localstatedir=/var \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+# there is on ly one tool and its only 4k...
+#tools() {
+#	pkgdesc="Tools to use with $pkgname"
+#	replaces="$pkgname"
+#	mkdir -p "$subpkgdir"/usr/
+#	mv "$pkgdir"/usr/bin "$subpkgdir"/usr
+#}
+
+md5sums="620eb745d64b714c6009f3e6f2ba33ec  libdc1394-2.2.4.tar.gz"
+sha256sums="a93689a353c241884a98727128f315ecf9965db70dca710b08af10e5fa0d2e6f  libdc1394-2.2.4.tar.gz"
+sha512sums="adb461fc5562855c3d26279971e25f38f3356c21e6be3fe343390c322d78f2515cf071da00da0ff39aec0d08147851354a2a0dbf325ad2fc179659e6ef5ab6e9  libdc1394-2.2.4.tar.gz"

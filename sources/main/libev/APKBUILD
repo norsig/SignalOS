@@ -1,0 +1,54 @@
+# Contributor: William Pitcock <nenolod@dereferenced.org>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=libev
+pkgver=4.22
+pkgrel=0
+pkgdesc="event dispatch library"
+url="http://libev.schmorp.de/"
+arch="all"
+license="BSD GPL"
+depends=
+depends_dev=
+makedepends="$depends_dev autoconf automake libtool"
+install=""
+subpackages="$pkgname-dev $pkgname-doc"
+source="http://dist.schmorp.de/${pkgname}/Attic/${pkgname}-${pkgver}.tar.gz
+	libev-4.11-Add-pkgconfig-support.patch
+	"
+
+_builddir="${srcdir}/${pkgname}-${pkgver}"
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+	libtoolize --force && aclocal -I m4 && autoheader&&  autoconf \
+		&& automake --add-missing
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make -j1 DESTDIR="$pkgdir" install || return 1
+	rm "$pkgdir"/usr/include/event.h
+}
+
+md5sums="bf0007e37240103d3c2be80ca9bee3f9  libev-4.22.tar.gz
+acec6b40b5ebea613fb0829f84e8a48b  libev-4.11-Add-pkgconfig-support.patch"
+sha256sums="736079e8ac543c74d59af73f9c52737b3bfec9601f020bf25a87a4f4d0f01bd6  libev-4.22.tar.gz
+2228eb682631655678e172a647238bf9c00b5ea8e732b45795e45fe5d79e1ffb  libev-4.11-Add-pkgconfig-support.patch"
+sha512sums="333f03065cec2615054892957cb87f8fe8461f7ac4e9f1e3ce362d3d2c32e62bffb635ec8cf1c0ec348923067c635d795d89eefc02e57395ae6aff27dc3ead3e  libev-4.22.tar.gz
+b5bc1b5ed1e605cd45a01adce70c1a97188c0b46a36333f12eccd4407c95d96f18adff90ee8c5733c1783a36b4adc5ef67d6b470104339a1ac5c4539a2a4599e  libev-4.11-Add-pkgconfig-support.patch"

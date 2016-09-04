@@ -1,0 +1,46 @@
+# Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=xz
+pkgver=5.2.2
+pkgrel=1
+pkgdesc="Library and command line tools for XZ and LZMA compressed files"
+url="http://tukaani.org/xz/"
+arch="all"
+license="custom"
+depends=""
+makedepends=""
+subpackages="$pkgname-dev $pkgname-doc $pkgname-libs"
+source="http://tukaani.org/xz/xz-$pkgver.tar.gz"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+build () {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--localstatedir=/var \
+		--disable-rpath \
+		--disable-werror \
+		|| return 1
+
+	sed 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' \
+		-i libtool || return 1
+	sed 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' \
+		-i libtool || return 1
+
+	make || return 1
+}
+
+package() {
+	make -C "$_builddir" DESTDIR="$pkgdir" install || return 1
+	install -Dm644 "$_builddir"/COPYING \
+		"$pkgdir"/usr/share/licenses/$pkgname || return 1
+}
+
+md5sums="7cf6a8544a7dae8e8106fdf7addfa28c  xz-5.2.2.tar.gz"
+sha256sums="73df4d5d34f0468bd57d09f2d8af363e95ed6cc3a4a86129d2f2c366259902a2  xz-5.2.2.tar.gz"
+sha512sums="8d6249f93c5c43e1c8eeb21f93b22330fd54575e20bbb4af3d06721192d9f0ca3351878964c9640238ac410b7dd9f16329793c7be7355c7ca0db92c6db6ab813  xz-5.2.2.tar.gz"

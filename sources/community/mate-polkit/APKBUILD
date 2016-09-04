@@ -1,0 +1,47 @@
+# Contributor: Alan Lacerda <alacerda@alpinelinux.org>
+# Maintainer: Alan Lacerda <alacerda@alpinelinux.org>
+pkgname=mate-polkit
+pkgver=1.14.0
+pkgrel=0
+pkgdesc="MATE Authentication Agent for PolicyKit"
+url="https://github.com/mate-desktop/mate-polkit"
+arch="all"
+license="GPL2"
+depends="mate-common"
+depends_dev=""
+makedepends="$depends_dev polkit-dev libtool intltool gtk+2.0-dev
+	gobject-introspection-dev"
+install=""
+subpackages="$pkgname-dev $pkgname-lang"
+source="http://pub.mate-desktop.org/releases/${pkgver%.*}/$pkgname-$pkgver.tar.xz"
+
+_builddir="$srcdir/$pkgname-$pkgver"
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--sysconfdir=/etc \
+		--prefix=/usr \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="${pkgdir}" install || return 1
+}
+
+md5sums="1259f8b245917ecfb22fc9d8ff309d2c  mate-polkit-1.14.0.tar.xz"
+sha256sums="929d5710d6284f924dc65824b75e9da23b5809c50033da18b6b4b79e0f599ddd  mate-polkit-1.14.0.tar.xz"
+sha512sums="f3507380152798af192e3338b5f056b1105fd297e935f098803c21450b04b6d149bc22106f34129a6394655be2e6505c91ad1433e817c68274a1243cc862bcdf  mate-polkit-1.14.0.tar.xz"

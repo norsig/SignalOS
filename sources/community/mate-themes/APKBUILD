@@ -1,0 +1,37 @@
+# Contributor: Alan Lacerda <alacerda@alpinelinux.org>
+# Maintainer: Alan Lacerda <alacerda@alpinelinux.org>
+pkgname=mate-themes
+pkgver=3.20.7
+pkgrel=0
+pkgdesc="MATE themes"
+url="https://github.com/mate-desktop/mate-themes"
+arch="noarch"
+license="LGPL2"
+depends="mate-common"
+depends_dev=""
+makedepends="$depends_dev intltool gdk-pixbuf-dev gtk+2.0-dev icon-naming-utils"
+install=""
+subpackages="$pkgname-lang"
+source="http://pub.mate-desktop.org/releases/themes/${pkgver%.*}/mate-themes-$pkgver.tar.xz"
+
+builddir="$srcdir/$pkgname-$pkgver"
+build() {
+	cd "$builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--sysconfdir=/etc \
+		--prefix=/usr \
+		--enable-all-themes \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$builddir"
+	make DESTDIR="${pkgdir}" install || return 1
+}
+
+md5sums="87a2254b0d9fe6deb93d58cba997ee12  mate-themes-3.20.7.tar.xz"
+sha256sums="c2909366b83e9e56e630fd5f51c5cf2f6993e0eb337717cac2663c708577606e  mate-themes-3.20.7.tar.xz"
+sha512sums="8f8eb631b9db8c170c04c6a65e39d7cfb7d1717c05d1c4ef9d0d48f2fc4249d0129c2665cabc116f0ae5600646b3ef0cb5add28828a0865185c018c480cc8640  mate-themes-3.20.7.tar.xz"

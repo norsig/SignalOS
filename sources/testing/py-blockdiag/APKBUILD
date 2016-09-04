@@ -1,0 +1,41 @@
+# Contributor: Fabian Affolter <fabian@affolter-engineering.ch>
+# Maintainer: Fabian Affolter <fabian@affolter-engineering.ch>
+pkgname=py-blockdiag
+_pkgname=blockdiag
+pkgver=1.5.1
+pkgrel=0
+pkgdesc="A python tool to generate block-diagram"
+url="http://blockdiag.com"
+arch="noarch"
+license="ASL 2.0"
+depends="python py-pillow py-funcparserlib py-setuptools py-webcolors"
+depends_dev=""
+makedepends="python-dev py-setuptools"
+install=""
+subpackages=""
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz"
+
+_builddir="$srcdir"/$_pkgname-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	python setup.py build || return 1
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py install --prefix=/usr --root="$pkgdir" || return 1
+}
+
+md5sums="e1bcaf5ae64467f7722ad7883fc06abb  blockdiag-1.5.1.tar.gz"
+sha256sums="893803c5b409130274506034acc990f7915dd026aa90c3b2905495f2df48215c  blockdiag-1.5.1.tar.gz"
+sha512sums="45fa83d7660daf48be29ff971c63aaa43519e0cadcdcaa46f42361123423ea684772b753bcc948231c4ad181b5749d4fc55fb9d196670b7ffe5241487531cccb  blockdiag-1.5.1.tar.gz"

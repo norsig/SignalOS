@@ -1,0 +1,32 @@
+# Contributor: Francesco Colista <fcolista@alpinelinux.org>
+# Maintainer: Francesco Colista <fcolista@alpinelinux.org>
+pkgname=libupnp
+pkgver=1.6.20
+pkgrel=0
+pkgdesc="Portable Open Source UPnP Development Kit"
+url="http://pupnp.sourceforge.net/"
+arch="all"
+license="BSD"
+depends=
+depends_dev=
+makedepends="$depends_dev"
+install=""
+subpackages="$pkgname-dev $pkgname-doc"
+source="http://downloads.sourceforge.net/sourceforge/pupnp/${pkgname}-${pkgver}.tar.bz2"
+builddir="$srcdir"/$pkgname-$pkgver
+
+build() {
+	cd "$builddir"
+	./configure --prefix=/usr
+	make || return 1
+}
+
+package() {
+	cd "$builddir"
+	make DESTDIR="$pkgdir" install || return 1
+	install -Dm644 LICENSE ${pkgdir}/usr/share/licenses/custom/${pkgname}/LICENSE
+}
+
+md5sums="6839c376b5ec71d2d56f7b64e829c438  libupnp-1.6.20.tar.bz2"
+sha256sums="ee3537081e3ea56f66ada10387486823989210bc98002f098305551c966e3a63  libupnp-1.6.20.tar.bz2"
+sha512sums="754a3f587963078fc60e8a58f6b04536dac03d053c8cd14d4fd7e505a3417484fa03b72dd09ef92150f00263f270aa19646b7aab1b8707111aff53c43f8a120a  libupnp-1.6.20.tar.bz2"

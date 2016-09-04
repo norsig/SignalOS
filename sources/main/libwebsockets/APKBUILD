@@ -1,0 +1,57 @@
+# Contributor: V.Krishn <vkrishn4@gmail.com>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=libwebsockets
+pkgver=2.0.2
+pkgrel=1
+pkgdesc="C library for lightweight websocket clients and servers"
+url="http://libwebsockets.org"
+arch="all"
+license="LGPL2.1"
+depends=
+depends_dev=""
+makedepends="$depends_dev cmake zlib-dev openssl-dev"
+subpackages="$pkgname-doc $pkgname-dev $pkgname-test:_test"
+source="$pkgname-$pkgver.tar.gz::https://github.com/warmcat/libwebsockets/archive/v$pkgver.tar.gz
+	"
+
+_srcdir="${srcdir}"/libwebsockets-$pkgver
+_builddir="${srcdir}/build"
+prepare() {
+        cd "$_srcdir"
+        for i in $source; do
+                case $i in
+                *.patch)
+                        msg "Applying $i"
+                        patch -p1 -i "$srcdir"/$i || return 1
+                        ;;
+                esac
+        done
+}
+
+
+build() {
+	mkdir "$_builddir"
+	cd "$_builddir"
+	cmake -DCMAKE_INSTALL_PREFIX=/usr \
+		"$_srcdir" || return 1
+	make
+}
+
+package() {
+	cd "$_srcdir"
+	install -Dm644 LICENSE "${pkgdir}"/usr/share/licenses/${pkgname}/LICENSE || return 1
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+	rm -f "$pkgdir"/usr/lib/*.a
+}
+
+_test() {
+	pkgdesc="$pkgdesc - test server"
+	mkdir -p "$subpkgdir"/usr
+	mv "$pkgdir"/usr/share "$pkgdir"/usr/bin "$subpkgdir"/usr/
+}
+
+
+md5sums="778c920a580fba1f943c84e9702e7b26  libwebsockets-2.0.2.tar.gz"
+sha256sums="43865604debd06686ac4d8d0783976c4e10dd519ccd5c94e1b53878ec6178a59  libwebsockets-2.0.2.tar.gz"
+sha512sums="e26e8f734e2f9259ca51c22ded1673f3e53a86f10ca69559866e8d3b063cbc41472dc556658bb9644f7241214ac0ac3b5c18d15c637c663645fb2d8113bd4c6c  libwebsockets-2.0.2.tar.gz"

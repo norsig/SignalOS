@@ -1,0 +1,64 @@
+# Contributor: Łukasz Jendrysik <scadu@yandex.com>
+# Contributor: Fabian Affolter <fabian@affolter-engineering.ch>
+# Maintainer: Fabian Affolter <fabian@affolter-engineering.ch>
+pkgname=nettle
+pkgver=3.2
+pkgrel=0
+pkgdesc="A low-level cryptographic library"
+url="http://www.lysator.liu.se/~nisse/nettle/"
+arch="all"
+license="LGPL2+"
+depends=""
+depends_dev="gmp-dev m4"
+makedepends="$depends_dev"
+install=""
+subpackages="$pkgname-dev $pkgname-utils"
+source="http://ftp.gnu.org/gnu/$pkgname/$pkgname-$pkgver.tar.gz
+	nettle-2.4-makefile.patch"
+_builddir="$srcdir"/$pkgname-$pkgver
+
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--localstatedir=/var \
+		--enable-shared \
+		--disable-openssl \
+		|| return 1
+	make || return 1
+	# strip comments in fields from .pc as it confuses pkgconf
+	sed -i -e 's/ \#.*//' *.pc || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+utils() {
+	pkgdesc="Utils for nettle"
+	mkdir -p "$subpkgdir"/usr
+	mv "$pkgdir"/usr/bin "$subpkgdir"/usr/
+}
+
+md5sums="afb15b4764ebf1b4e6d06c62bd4d29e4  nettle-3.2.tar.gz
+b3a89964557b9fca040a84e9217b4b01  nettle-2.4-makefile.patch"
+sha256sums="ea4283def236413edab5a4cf9cf32adf540c8df1b9b67641cfc2302fca849d97  nettle-3.2.tar.gz
+e903bc46375df777d3074e44f9ee9ee166058cc8bb103d748f7981195031b797  nettle-2.4-makefile.patch"
+sha512sums="9f2c802e8b683d1c2fd8d16ab33b2a1efda33a1bf33196be39031a2d0677f2e78d67221a718997780e157aa72973da7d9d549429e706fcfcdff97ee3bbef615a  nettle-3.2.tar.gz
+c7d9741a7a37d225f3f0db16d355e13b04cc0f1ac56882a6ff31ef15c1a1a0aee7a70cf1ec8bbf2c46b9b0dcec153da7a7aa6b8909a72d76dd4d669cbbaceaa4  nettle-2.4-makefile.patch"

@@ -1,0 +1,67 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=procps
+_projname="${pkgname}-ng"
+_githash="e0784ddaed30d095bb1d9a8ad6b5a23d10a212c4"
+pkgver=3.3.12
+pkgrel=0
+pkgdesc="Utilities for monitoring your system and processes on your system"
+url="https://gitlab.com/${_projname}/${pkgname}"
+arch="all"
+license="GPL LGPL"
+depends=
+makedepends="ncurses-dev gettext-dev autoconf automake libtool"
+subpackages="$pkgname-dev $pkgname-doc libproc"
+source="${pkgname}-${pkgver}.tar.gz::https://gitlab.com/${_projname}/${pkgname}/repository/archive.tar.gz?ref=v${pkgver}"
+
+_builddir="${srcdir}/${pkgname}-v${pkgver}-${_githash}"
+
+prepare() {
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+	./autogen.sh
+}
+
+build() {
+	cd "$_builddir"
+	export LIBS="$LIBS -lintl"
+		./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/ \
+		--bindir=/bin \
+		--sbindir=/sbin \
+		--libdir=/lib \
+		--mandir=/usr/share/man \
+		--sysconfdir=/etc \
+		--docdir=/usr/share/doc \
+		--disable-static \
+		--disable-w-from \
+		--disable-kill \
+		--disable-rpath \
+		--with-ncurses \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" ldconfig=true install="install -D" \
+		install || return 1
+	install -d "$pkgdir"/usr/lib
+	mv "$pkgdir"/include "$pkgdir"/usr/ \
+		&& mv "$pkgdir"/lib/pkgconfig "$pkgdir"/usr/lib/
+}
+
+libproc() {
+	pkgdesc="Library for monitoring system and processes"
+	install -d "$subpkgdir"/
+	mv "$pkgdir"/lib "$subpkgdir"/
+}
+
+md5sums="9e7545423a204a37e9828abf01515d8f  procps-3.3.12.tar.gz"
+sha256sums="b1036c109f271c7c50325b11a748236f8e58aa1dbafefb30c995ff1d05b4a1a8  procps-3.3.12.tar.gz"
+sha512sums="a4400b9e13f8e9ec1c527a0e9e2e5580b6d007cae0f961b2a82c2924e4922232cee7a8be77badb45d608383758476da0260460d8e0801a5e88ced7cc6b8c10cc  procps-3.3.12.tar.gz"

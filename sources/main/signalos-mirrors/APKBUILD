@@ -1,0 +1,30 @@
+# Contributor: Matt Smith <mcs@darkregion.net>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=signalos-mirrors
+pkgver=3.4.2
+pkgrel=0
+pkgdesc="List of SignalOS Mirrors"
+url="https://northernsignal.com/signalos/"
+arch="noarch"
+license="MIT"
+depends=""
+makedepends=""
+install=""
+subpackages=""
+source="mirrors.yaml"
+
+build() {
+	cd "$srcdir"
+	awk '$1 == "-" && $2 ~ /^http:/ {print $2}' mirrors.yaml > MIRRORS.txt
+}
+
+package() {
+	install -D -m644 "$srcdir"/mirrors.yaml \
+		"$pkgdir"/usr/share/signalos-mirrors/mirrors.yaml || return 1
+	install -D -m644 "$srcdir"/MIRRORS.txt \
+		"$pkgdir"/usr/share/signalos-mirrors/MIRRORS.txt || return 1
+}
+
+md5sums="c7bf119481bdf215d433cf47c5b67968  mirrors.yaml"
+sha256sums="223af0b72f0bbbfd7560f61ceb459405c999fe677666f245a95c4cd9e76ae6b3  mirrors.yaml"
+sha512sums="14945d864890f33f7388b0cff3552b286237173483b3be8b1558600ed6e3d0764dc8ff10c8b553c8cd7267fa7075de3687787e54fdae7de8953692ab3b0a5930  mirrors.yaml"

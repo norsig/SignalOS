@@ -1,0 +1,54 @@
+# Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=man-pages
+pkgver=4.07
+_posixver=2013-a
+pkgrel=0
+pkgdesc="Linux man pages"
+url="http://www.kernel.org/doc/man-pages/"
+arch="noarch"
+license="GPL"
+depends=""
+makedepends=""
+options="!strip"
+source="http://www.kernel.org/pub/linux/docs/$pkgname/$pkgname-$pkgver.tar.xz
+	http://www.kernel.org/pub/linux/docs/$pkgname/$pkgname-posix/$pkgname-posix-${_posixver}.tar.xz
+	"
+
+builddir="$srcdir"/$pkgname-$pkgver
+build() {
+	cd "$srcdir"/$pkgname-$pkgver
+	mkdir -p "$srcdir"/$pkgname-$pkgver/man0
+	for sect in 0 1 3; do
+		sed -i "/^\.so /s/man${sect}p/man$sect/" \
+			"$srcdir"/$pkgname-posix-${_posixver}/man${sect}p/*
+		mv "$srcdir"/$pkgname-posix-${_posixver}/man${sect}p/* \
+			"$srcdir"/$pkgname-$pkgver/man$sect/
+	done
+}
+
+package() {
+	cd "$srcdir"/$pkgname-$pkgver
+	make prefix="$pkgdir"/usr install || return 1
+	find "$pkgdir"/usr/share/man -name "*.[0-9]" | xargs gzip -9
+
+	# provided by libiconv-doc
+	rm -f "$pkgdir"/usr/share/man/man3/iconv*
+
+	# provided by mdocml
+	rm -f "$pkgdir"/usr/share/man/man7/man* \
+		"$pkgdir"/usr/share/man/man7/mdoc*
+
+	# provided by tzdata
+	rm -f "$pkgdir"/usr/share/man/man5/tzfile* \
+		"$pkgdir"/usr/share/man/man8/tzselect* \
+		"$pkgdir"/usr/share/man/man8/zic* \
+		"$pkgdir"/usr/share/man/man8/zdump*
+}
+
+md5sums="6d6c59b83431852ba44930785def30d4  man-pages-4.07.tar.xz
+825fde78e6fddd02426ecdd50e2cbe0d  man-pages-posix-2013-a.tar.xz"
+sha256sums="1f236e112eedca15fc09a2857c160c81a64af8b786674376edf49aa0f69035ee  man-pages-4.07.tar.xz
+19633a5c75ff7deab35b1d2c3d5b7748e7bd4ef4ab598b647bb7e7f60b90a808  man-pages-posix-2013-a.tar.xz"
+sha512sums="76b6cf7c2ae8b10652b5419e5e0141a515b02da8b83aa1bc3a7c4bb9ad0647af80b60603f8253f2f562752a970701b752d7101f83cade74019a8b0d61ecde7df  man-pages-4.07.tar.xz
+e6ec8eb57269fadf368aeaac31b5a98b9c71723d4d5cc189f9c4642d6e865c88e44f77481dccbdb72e31526488eb531f624d455016361687a834ccfcac19fa14  man-pages-posix-2013-a.tar.xz"

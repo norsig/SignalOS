@@ -1,0 +1,31 @@
+# Contributor: Leonardo Arena <rnalrd@alpinelinux.org>
+# Maintainer:  Leonardo Arena <rnalrd@alpinelinux.org>
+pkgname=perl-db_file
+_realname=DB_File
+pkgver=1.827
+pkgrel=5
+pkgdesc="Perl5 access to Berkeley DB"
+url="http://search.cpan.org/~pmqs/DB_File-1.820/"
+arch="all"
+license="GPL PerlArtistic"
+depends="perl"
+makedepends="perl-dev db-dev"
+install=
+subpackages="$pkgname-doc"
+source="http://search.cpan.org/CPAN/authors/id/P/PM/PMQS/$_realname-$pkgver.tar.gz"
+
+build() {
+	cd "$srcdir/$_realname-$pkgver"
+
+	PERL_MM_USE_DEFAULT=1 perl Makefile.PL INSTALLDIRS=vendor || return 1
+	make || return 1
+}
+
+package() {
+	cd "$srcdir/$_realname-$pkgver"
+	make DESTDIR="$pkgdir" install
+	# creates file collision among perl modules
+	find "$pkgdir" -name perllocal.pod -delete
+}
+
+md5sums="ba76d23ccbcae48b612572ae57376e28  DB_File-1.827.tar.gz"

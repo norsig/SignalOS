@@ -1,0 +1,68 @@
+# Maintainer: Leonardo Arena <rnalrd@alpinelinux.org>
+pkgname=usb-modeswitch
+pkgver=2.2.0
+pkgrel=2
+_pkgdata=20140529
+pkgdesc="A mode switching tool for controlling flip flop (multiple device) USB gear"
+url="http://www.draisberghof.de/usb_modeswitch/"
+arch="all"
+license="GPL2+"
+depends=""
+makedepends="libusb-compat-dev coreutils tcl"
+install=
+subpackages="$pkgname-doc $pkgname-udev"
+source="http://www.draisberghof.de/usb_modeswitch/${pkgname}-${pkgver}.tar.bz2
+		http://www.draisberghof.de/usb_modeswitch/${pkgname}-data-${_pkgdata}.tar.bz2
+		usb_modeswitch.setup"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+prepare() {
+	cd "$_builddir"
+	make clean || return 1
+	sed -i -e 's/--mode=/-m/' Makefile || return 1
+
+	cd ../${pkgname}-data-${_pkgdata}
+#	sed -i -e 's%install -m644 -t $(PREFIX)/share/usb_modeswitch ./usb_modeswitch.d/*%cp -R $(PREFIX)/share/usb_modeswitch/* ./usb_modeswitch.d/%' Makefile || return 1
+	sed -i -e 's/--mode=/-m/' Makefile || return 1
+}
+
+build() {
+	cd "$_builddir"
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+	# adjusting the tcl script location
+	# mv ${pkgdir}/lib/udev/usb_modeswitch/usb_modeswitch.tcl \
+	#  ${pkgdir}/lib/udev/usb_modeswitch.tcl || return 1
+	# rmdir ${pkgdir}/lib/udev/usb_modeswitch || return 1
+        # mv ${pkgdir}/lib/udev/usb_modeswitch.tcl \
+	#  ${pkgdir}/lib/udev/usb_modeswitch  || return 1
+
+	# installing data
+	cd $srcdir/usb-modeswitch-data-${_pkgdata} || return 1
+	make DESTDIR=$pkgdir install || return 1
+	# installing config
+	cp $srcdir/usb_modeswitch.setup $pkgdir/etc/ || return 1
+}
+
+udev() {
+	pkgdesc="udev support for usb-modeswitch"
+	depends="tcl eudev $pkgname=$pkgver-r$pkgrel"
+	mkdir -p "$subpkgdir"/usr/sbin
+	mv "$pkgdir"/lib "$subpkgdir"/ || return 1
+	mv "$pkgdir"/usr/sbin/usb_modeswitch_dispatcher \
+		"$subpkgdir"/usr/sbin/
+}
+
+md5sums="f323fe700edd6ea404c40934ddf32b22  usb-modeswitch-2.2.0.tar.bz2
+dff94177781298aaf0b3c2a3c3dea6b2  usb-modeswitch-data-20140529.tar.bz2
+9a25756669937ac86774bb55733f09cd  usb_modeswitch.setup"
+sha256sums="2752103de171ed5f6c8d6a6e3e73e16c9ee3e8e394dd39c5991f7680eb908a3a  usb-modeswitch-2.2.0.tar.bz2
+53889157937109e04dafe897c098ec94f3f44f9c0c83fc6ec8417aa9a587e536  usb-modeswitch-data-20140529.tar.bz2
+76c0fd9138a6d4a09d6bcee27feeb144c431aed163d556ef60a9c39352ec7f26  usb_modeswitch.setup"
+sha512sums="1311365c580035361e961ffefb84acf88771aae17d4b084733f2e0d10ac2ad770cf7d3b64c1c6cc400f19082530b425714f3afb88d10d6023e3798261a982e67  usb-modeswitch-2.2.0.tar.bz2
+e0ac311ae09dcf41b45e9434bf43e7964ec0a32ac68024216ddfb6d6fd9d3b484cbe663ec081841e11a4af80e50fce12f1a06e0249aa229558085886c0f25809  usb-modeswitch-data-20140529.tar.bz2
+48bc921849c529059c35f00e9cb10e92fee32622d63291bbd7184039bbe4c4324591b4011b24cf9b6c4ed2a7ad90fe0d5287a58631de5114b36f70d4f6f3c250  usb_modeswitch.setup"

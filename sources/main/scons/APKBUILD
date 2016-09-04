@@ -1,0 +1,28 @@
+# Contributor: William Pitcock <nenolod@dereferenced.org>
+# Maintainer: William Pitcock <nenolod@dereferenced.org>
+pkgname=scons
+pkgver=2.4.1
+pkgrel=0
+pkgdesc="scons software construction system"
+url="http://www.scons.org/"
+arch="noarch"
+license="MIT"
+depends="python"
+makedepends="python-dev"
+install=""
+source="http://downloads.sourceforge.net/$pkgname/$pkgname-$pkgver.tar.gz"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+build() {
+	cd "$_builddir"
+	python setup.py build || return 1
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py install --prefix=/usr --root="$pkgdir" || return 1
+}
+
+md5sums="9a0ddf33d9839f04380e0fae87cc4b40  scons-2.4.1.tar.gz"
+sha256sums="8fc4f42928c69bcbb33e1be94b646f2c700b659693fabc778c192d4d22f753a7  scons-2.4.1.tar.gz"
+sha512sums="bd0830719dfc0c2e8620ec767ee6342af74a170cd895acda2995761eafe52e1efa9471626fcaedb0dd9a779ef9bb9b4306bd6cd3c2a5bd7bd2500018b40653e0  scons-2.4.1.tar.gz"

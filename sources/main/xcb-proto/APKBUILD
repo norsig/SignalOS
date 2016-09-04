@@ -1,0 +1,31 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=xcb-proto
+pkgver=1.12
+pkgrel=0
+pkgdesc="XML-XCB protocol descriptions"
+url="http://xcb.freedesktop.org/"
+arch="noarch"
+license="custom"
+depends=
+makedepends="python"
+source="http://xcb.freedesktop.org/dist/$pkgname-$pkgver.tar.bz2"
+
+build() {
+	cd "$srcdir"/${pkgname}-${pkgver}
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$srcdir"/${pkgname}-${pkgver}
+	make DESTDIR=${pkgdir} install || return 1
+	install -m755 -d ${pkgdir}/usr/share/licenses/${pkgname}
+	install -m644 COPYING ${pkgdir}/usr/share/licenses/${pkgname}/ || return 1
+}
+md5sums="14e60919f859560f28426a685a555962  xcb-proto-1.12.tar.bz2"
+sha256sums="5922aba4c664ab7899a29d92ea91a87aa4c1fc7eb5ee550325c3216c480a4906  xcb-proto-1.12.tar.bz2"
+sha512sums="1f427eaf223971b25b56c9f641350e03f5ebeb17a1fc212ce2a0c892de7aba7e53d5e3958b073a122bb344c387c0ff394cf96f542ff046f33de4e1cd27fb9e5c  xcb-proto-1.12.tar.bz2"

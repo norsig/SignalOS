@@ -1,0 +1,16 @@
+#!/sbin/openrc-run
+
+name="uwsgi"
+command="/usr/sbin/uwsgi"
+command_args="--ini /etc/uwsgi/uwsgi.ini --daemonize=/var/log/uwsgi/uwsgi.log"
+retry="INT/30/KILL/5"
+start_stop_daemon_args="--quiet"
+
+depend() {
+        need net
+}
+
+start_pre() {
+        checkpath --directory --owner uwsgi:uwsgi \
+                --mode 0775 /run/uwsgi /var/log/uwsgi
+}

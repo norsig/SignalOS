@@ -1,0 +1,61 @@
+# Maintainer: Timo Teräs <timo.teras@iki.fi>
+pkgname=raspberrypi
+pkgver=0.20160425
+_commitid=17c28b9d1d234893b73adeb95efc4959b617fc85
+pkgrel=0
+pkgdesc="Raspberry Pi support tools"
+url="https://github.com/raspberrypi/userland"
+arch="armhf"
+license="BSD"
+depends=""
+depends_dev="linux-headers raspberrypi-libs"
+makedepends="cmake $depends_dev"
+install=""
+options="!fhs"
+subpackages="$pkgname-dev $pkgname-libs"
+source="raspberrypi-$pkgver.tar.gz::https://github.com/raspberrypi/userland/archive/$_commitid.tar.gz
+	"
+
+_sourcedir="$srcdir"/userland-$_commitid
+_builddir="$srcdir"/build
+
+prepare() {
+	local i
+	cd "$_sourcedir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	mkdir -p "$_builddir"
+	cd "$_builddir"
+	# -Wno-error=array-bounds is workaround for gcc bug 59124
+	cmake	-DCMAKE_C_FLAGS="$CFLAGS -D_GNU_SOURCE -Wno-error=array-bounds" \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_RPATH=/opt/vc/lib \
+		$_sourcedir || return 1
+	make
+}
+
+package() {
+	cd "$_builddir"
+	make install DESTDIR="$pkgdir" || return 1
+
+	# nuke the unwanted stuff
+	rm -rf "$pkgdir"/opt/vc/src
+	rm -rf "$pkgdir"/opt/vc/lib/*.a
+}
+
+libs() {
+	pkgdesc="Raspberry Pi support libraries"
+
+	mkdir -p "$subpkgdir"/opt/vc/lib
+	mv "$pkgdir"/opt/vc/lib/* "$subpkgdir"/opt/vc/lib
+}
+
+md5sums="954fedc1d1f7f101142794fd17a76e69  raspberrypi-0.20160425.tar.gz"
+sha256sums="83108789f946ab8957499dd58f1cacd099630979ec8fccb54be9240c4ff14210  raspberrypi-0.20160425.tar.gz"
+sha512sums="2a2426f3ed21974d9817cf1babaa8c0708a0efc7da2f01936e28a5196f0cbd1f56f78c618e93fb580e9f03212550305484ba8709b1cccd43ff71bc1427915fe2  raspberrypi-0.20160425.tar.gz"

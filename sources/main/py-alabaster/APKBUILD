@@ -1,0 +1,40 @@
+# Contributor: Carlo Landmeter <clandmeter@gmail.com>
+# Maintainer:
+pkgname=py-alabaster
+pkgver=0.7.8
+pkgrel=0
+pkgdesc="Modified Kr Sphinx doc theme"
+url="https://github.com/bitprophet/alabaster"
+arch="noarch"
+license="BSD"
+depends=""
+depends_dev=""
+makedepends="$depends_dev python-dev py-setuptools"
+install=""
+subpackages=""
+source="alabaster-$pkgver.tar.gz::https://github.com/bitprophet/alabaster/archive/$pkgver.tar.gz"
+
+_builddir="$srcdir"/alabaster-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	python setup.py build || return 1
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py install --prefix=/usr --root="$pkgdir" || return 1
+}
+
+md5sums="b551009d679f0cbfa7d12e75e76c86a9  alabaster-0.7.8.tar.gz"
+sha256sums="ebfea26e1a6d459432d995717316ab786ebc8bd43d859228e5bea31b3ebd2a32  alabaster-0.7.8.tar.gz"
+sha512sums="62c9a871c781bde8f752d9bbe3fba1c4574b5c6a45e3d6ebc12db81a461cc073490e781900765b731d3991414e7f09aa54c7d85e5c8cfdb94a17e12593671f70  alabaster-0.7.8.tar.gz"

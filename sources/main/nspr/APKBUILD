@@ -1,0 +1,76 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=nspr
+pkgver=4.12
+pkgrel=0
+pkgdesc="Netscape Portable Runtime"
+url="http://www.mozilla.org/projects/nspr/"
+arch="all"
+license="MPL-1.1 GPL2 LGPL-2.1"
+depends=
+# -dev package does not ship any symlinks so dependency cannot be autodetected
+depends_dev="nspr"
+makedepends="autoconf automake sed"
+subpackages="$pkgname-dev"
+source="http://ftp.mozilla.org/pub/mozilla.org/nspr/releases/v$pkgver/src/nspr-$pkgver.tar.gz
+	fix-getproto.patch
+	"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+prepare() {
+	cd "$_builddir"
+	mkdir build inst
+	for i in $source; do
+		case $i in
+		*.patch)
+			msg "Applying $i"
+			patch -p1 -i "$srcdir"/$i || return 1
+			;;
+		esac
+	done
+}
+
+build() {
+	local conf=
+	if [ "$CARCH" = "x86_64" ];then
+		conf="--enable-64bit"
+	fi
+	cd "$_builddir"/build
+	# ./nspr/pr/include/md/_linux.h tests only __GLIBC__ version
+	# to detect c-library features, list musl features here for now.
+	CFLAGS="$CFLAGS -D_PR_POLL_AVAILABLE -D_PR_HAVE_OFF64_T -D_PR_INET6 -D_PR_HAVE_INET_NTOP -D_PR_HAVE_GETHOSTBYNAME2 -D_PR_HAVE_GETADDRINFO -D_PR_INET6_PROBE" \
+	../nspr/configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--disable-debug \
+		--enable-optimize \
+		--enable-ipv6 \
+		$conf \
+		|| return 1
+	make CC="${CC:-gcc}" CXX="${CXX:-g++}" || return 1
+}
+
+package() {
+	local file=
+
+	cd "$_builddir"/build
+	make DESTDIR="$pkgdir" install || return 1
+
+	cd "$pkgdir"/usr/lib
+	rm -f *.a
+
+	cd "$_builddir"/build/config
+	install -Dm755 nspr-config "$pkgdir"/usr/bin/nspr-config || return 1
+	install -Dm644 nspr.pc "$pkgdir"/usr/lib/pkgconfig/nspr.pc || return 1
+	rm -rf "$pkgdir"/usr/bin/prerr.properties \
+		"$pkgdir"/usr/bin/compile-et.pl \
+		"$pkgdir"/usr/share/aclocal/nspr.m4 \
+		"$pkgdir"/usr/include/nspr/md
+}
+
+md5sums="0de760c1e00a92e180e611cf06ce9589  nspr-4.12.tar.gz
+6911c977d89df5203b16c275311f2afe  fix-getproto.patch"
+sha256sums="e0b10a1e569153668ff8bdea6c7e491b389fab69c2f18285a1ebf7c2ea4269de  nspr-4.12.tar.gz
+d9e9e80b31559ffd2a28857e455076e2b874b81c1557bc3a80f1984bcc0bc719  fix-getproto.patch"
+sha512sums="138072be98dea6e97ea38f3e562c8ee383626c2136ec1adb854a81315468cd484c4b994c3ccaf6a39327b3fe121f77d698bf85c2764ec4b6231828b8a9ec5460  nspr-4.12.tar.gz
+ee654f609a90b9a95c1901ad1d56cdef7cce8bca9efc092198607944f142f8fec924b13219ca6663facd0f0d59b671b8b3de58ab3449c4c863d42e2937f02184  fix-getproto.patch"

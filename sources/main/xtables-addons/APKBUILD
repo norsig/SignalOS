@@ -1,0 +1,38 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=xtables-addons
+pkgver=2.9
+pkgrel=1
+pkgdesc="Netfilter userspace extensions for iptables"
+url="http://xtables-addons.sourceforge.net/"
+arch="all"
+license="GPL"
+depends=
+makedepends="iptables-dev bash coreutils"
+install=
+subpackages="$pkgname-doc"
+source="http://downloads.sourceforge.net/$pkgname/$pkgname-$pkgver.tar.xz"
+
+builddir="$srcdir/$pkgname-$pkgver"
+
+build() {
+	cd "$builddir"
+
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--mandir=/usr/share/man \
+		--without-kbuild \
+		|| return 1
+
+	make CC="${CC-gcc}" kbuilddir=
+}
+
+package() {
+	cd "$builddir"
+	make builddir= DESTDIR="$pkgdir" install || return 1
+}
+
+md5sums="87df49f3804036eccd4619f566d26bb3  xtables-addons-2.9.tar.xz"
+sha256sums="648f6cd17ba41916df5bb605e617b2f18461090139e67d7cf5c5bd8a04c701b0  xtables-addons-2.9.tar.xz"
+sha512sums="a77de4f61445974918e546e983f623250e10d8d1e506d94f1ca9081331aefde040164a83001b22769ba59efe7125a381808aa6adfd08ef734afdf0fc20d2bccb  xtables-addons-2.9.tar.xz"

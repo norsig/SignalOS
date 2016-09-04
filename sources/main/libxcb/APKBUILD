@@ -1,0 +1,46 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=libxcb
+pkgver=1.12
+pkgrel=0
+pkgdesc="X11 client-side library"
+url="http://xcb.freedesktop.org/"
+arch="all"
+license="custom"
+depends=
+subpackages="$pkgname-dev $pkgname-doc"
+depends_dev="libxau-dev xcb-proto"
+makedepends="$depends_dev libxslt python libpthread-stubs libxdmcp-dev"
+source="http://xcb.freedesktop.org/dist/$pkgname-$pkgver.tar.bz2
+	"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+prepare() {
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--enable-xkb \
+		--enable-xinput \
+		--disable-xprint \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+	install -Dm644 COPYING "$pkgdir"/usr/share/licenses/$pkgname/COPYING
+}
+md5sums="28e552bd78bc1050b6b26ca1db0e5bb6  libxcb-1.12.tar.bz2"
+sha256sums="4adfb1b7c67e99bc9c2ccb110b2f175686576d2f792c8a71b9c8b19014057b5b  libxcb-1.12.tar.bz2"
+sha512sums="4ce3e3f62b7e1c3a9e61c149c720ef2a4a760539ea615d7d52ae39e7f5a08456dc87d7a1ac5d85ca15dcc468a9a02d56fb8f8f6361c959af9b8780f011995896  libxcb-1.12.tar.bz2"

@@ -1,0 +1,39 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=garcon
+pkgver=0.4.0
+pkgrel=2
+pkgdesc="a freedesktop.org compliant menu implementation based on GLib and GIO"
+url="http://www.xfce.org/"
+arch="all"
+license="GPL2"
+subpackages="$pkgname-dev $pkgname-doc $pkgname-lang"
+depends=
+depends_dev="glib-dev gtk+2.0-dev libxfce4ui-dev"
+makedepends="$depends_dev intltool libxfce4util-dev gtk-doc"
+install=
+source="http://archive.xfce.org/src/libs/$pkgname/${pkgver%.*}/$pkgname-$pkgver.tar.bz2"
+replaces="xfdesktop"
+
+build() {
+	cd "$srcdir"/$pkgname-$pkgver
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--libexecdir=/usr/lib \
+		--localstatedir=/var \
+		--disable-static \
+		--enable-gtk-doc \
+		|| return 1
+	make
+}
+
+package() {
+	cd "$srcdir"/$pkgname-$pkgver
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+md5sums="aba62b80787aac295083bf7afd419ffb  garcon-0.4.0.tar.bz2"
+sha256sums="787dc859713b6518992d760d4b858fb02e8a30705e6f6e871d7a14cc97bca972  garcon-0.4.0.tar.bz2"
+sha512sums="f48f9782a1448cd8e722e6871220fc887b91fc82cfe03075408c94a732e0e2f4bba2704fe2533d7107eeb50995d775592eef30e68efa0f9647eafec9df4a1a2d  garcon-0.4.0.tar.bz2"

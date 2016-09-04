@@ -1,0 +1,41 @@
+# Contributor: Leonardo Arena <rnalrd@alpinelinux.org>
+# Maintainer:
+pkgname=owncloud-client
+pkgver=2.2.0
+pkgrel=0
+pkgdesc="ownCloud Desktop Client"
+url="https://github.com/owncloud/client"
+arch="all"
+license="GPL2"
+depends=
+depends_dev=
+makedepends="$depends_dev cmake qt5-qttools-dev qt5-qtwebkit-dev
+	qt5-qtkeychain-dev"
+install=
+subpackages="$pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/owncloud/client/archive/v$pkgver.tar.gz"
+
+builddir="$srcdir"/client-$pkgver
+
+build() {
+	cd "$builddir"
+	cmake \
+		-DCMAKE_BUILD_TYPE="Release" \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_SYSCONFDIR=/etc/$pkgname
+	make all || return 1
+}
+
+package() {
+	cd "$builddir"
+	make DESTDIR="$pkgdir" install
+
+	# remove the 2 lines below (and this) if there is no init.d script
+	# install -m755 -D "$srcdir"/$pkgname.initd "$pkgdir"/etc/init.d/$pkgname
+	# install -m644 -D "$srcdir"/$pkgname.confd "$pkgdir"/etc/conf.d/$pkgname
+}
+
+md5sums="aeb2ecd8cdaac2c7710ed793a07c7369  owncloud-client-2.2.0.tar.gz"
+sha256sums="e3e86eec8f8a07019f510359f65cfb852e380abaadb6a5505b529c1db5ed7323  owncloud-client-2.2.0.tar.gz"
+sha512sums="3b9c19902ffa8c8d3d4a3516fe67e978678616b451e7b2812c24b24cbd10835c3025ff95dff45b4802a6825d1c4d8e1a0e70b0e97ba571a1c03d6527ab098518  owncloud-client-2.2.0.tar.gz"

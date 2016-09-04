@@ -1,0 +1,40 @@
+# Contributor: William Pitcock <nenolod@dereferenced.org>
+# Maintainer: Eivind Uggedal <eivind@uggedal.com>
+pkgname=py-werkzeug
+pkgver=0.9.6
+pkgrel=0
+pkgdesc="The WSGI swiss-army knife"
+url="http://pypi.python.org/pypi/Werkzeug"
+arch="noarch"
+license="MIT"
+depends="python"
+depends_dev=""
+makedepends="python-dev py-setuptools"
+install=""
+subpackages=""
+source="https://files.pythonhosted.org/packages/source/W/Werkzeug/Werkzeug-$pkgver.tar.gz"
+
+_builddir="$srcdir"/Werkzeug-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	python setup.py build || return 1
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py install --prefix=/usr --root="$pkgdir" || return 1
+}
+
+md5sums="f7afcadc03b0f2267bdc156c34586043  Werkzeug-0.9.6.tar.gz"
+sha256sums="7f11e7e2e73eb22677cac1b11113eb6106f66cedef13d140e83cf6563c90b79c  Werkzeug-0.9.6.tar.gz"
+sha512sums="0b36df25d5f69a0353f7a9321b9197ace2926b6d8e983a91ef372c270ff51462f7d86184447a5f74b4ad05ffdc6411098f77b45a4f1c906dd525d7edf220399c  Werkzeug-0.9.6.tar.gz"

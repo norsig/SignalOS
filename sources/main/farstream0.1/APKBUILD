@@ -1,0 +1,56 @@
+# Contributor: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=farstream0.1
+pkgver=0.1.2
+pkgrel=2
+pkgdesc="Libraries for videoconferencing"
+url="http://www.freedesktop.org/wiki/Software/Farstream"
+arch="all"
+license="LGPLv2+"
+depends=""
+depends_dev="libnice-dev gstreamer0.10-dev gst-plugins-base0.10-dev"
+makedepends="$depends_dev gobject-introspection-dev py-gobject-dev python-dev
+	py-gst0.10"
+install=""
+replaces="farstream"
+subpackages="$pkgname-dev $pkgname-doc py-$pkgname:py"
+source="http://freedesktop.org/software/farstream/releases/farstream/farstream-$pkgver.tar.gz
+	gtk-doc.patch"
+
+_builddir="$srcdir"/farstream-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	update_config_sub || return 1
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--enable-python \
+		|| return 1
+	make -C farstream -j1 || return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+py() {
+	pkgdesc="Python binding for farstream"
+	mkdir -p "$subpkgdir"/usr/lib/
+	mv "$pkgdir"/usr/lib/python* "$subpkgdir"/usr/lib/
+}
+
+md5sums="5d6e561b3688d0d0c8906fec4f356df3  farstream-0.1.2.tar.gz
+e5f6667659136db6eec6c532377d5598  gtk-doc.patch"

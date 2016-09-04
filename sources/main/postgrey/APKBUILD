@@ -1,0 +1,47 @@
+# Contributor: Michael Mason <ms13sp@gmail.com>
+# Maintainer: Michael Mason <ms13sp@gmail.com>
+pkgname=postgrey
+pkgver=1.36
+pkgrel=2
+pkgdesc="Postfix policy server implementing greylisting"
+url="http://postgrey.schweikert.ch/"
+arch="noarch"
+license="GPL"
+depends="perl perl-db perl-net-dns perl-net-server perl-io-multiplex
+	perl-net-rblclient perl-parse-syslog"
+pkgusers="postgrey"
+pkggroups="postgrey"
+makedepends=""
+install=postgrey.pre-install
+subpackages=""
+source="http://postgrey.schweikert.ch/pub/$pkgname-$pkgver.tar.gz
+	postgrey.confd
+	postgrey.initd"
+
+build() {
+	return 0
+}
+
+package() {
+	cd "$srcdir"/$pkgname-$pkgver
+
+	install -m755 -D $pkgname  "$pkgdir"/usr/sbin/$pkgname
+	mkdir -p "$pkgdir"/var/spool/postfix/$pkgname
+	chown postgrey:postgrey "$pkgdir"/var/spool/postfix/$pkgname
+	chmod 770 "$pkgdir"/var/spool/postfix/$pkgname
+	install -m755 -D contrib/postgreyreport "$pkgdir"/usr/bin/postgreyreport
+	install -m755 -D "$srcdir"/$pkgname.initd "$pkgdir"/etc/init.d/$pkgname
+	install -m644 -D postgrey_whitelist_clients "$pkgdir"/etc/postfix/postgrey_whitelist_clients
+	install -m644 -D postgrey_whitelist_recipients "$pkgdir"/etc/postfix/postgrey_whitelist_recipients
+	install -m644 -D "$srcdir"/$pkgname.confd "$pkgdir"/etc/conf.d/$pkgname
+}
+
+md5sums="eb4c9426347851d45cdb51e396745a66  postgrey-1.36.tar.gz
+caaad5770ab07fb5af3bbd522a05b84f  postgrey.confd
+0847234868035a95e4e9d3952e0c454b  postgrey.initd"
+sha256sums="a22bf8c42518d802a32b070332b7ca3aed985ff4f9a59cd04028c56988585f26  postgrey-1.36.tar.gz
+2c84116caad8ba675ad73c4f2a10c766bd048572677c74720ad3ae2448ea9519  postgrey.confd
+8dbe7f4a74491990d8b91f02c45083123cf19ef725a9756f47dd9f890b49ca73  postgrey.initd"
+sha512sums="9b2502b873658c1ef8a86bff091d61b8dc8d66f7395bc0a869f9e6ec60b691a317c084ae326f49ce8dd926f0fa2620a58f3ad76c25e1b1c9606557d2802d1395  postgrey-1.36.tar.gz
+cf74ad36c07a3807d85de9c60cfaea31b3c04adebbe306e72d61bf14c1a17e4a07654f0a96919091735b94ea5e3b7847de5e02d4801b3f58240e5622d8ac0d10  postgrey.confd
+fdfdf29d4eae3e74cb673bfd51dea205949afc55630d05ca62a95c45e94b1091aea57d47ea7ddece3957922ece04b23f484320bf374ab2520119e1cd95dc2f3f  postgrey.initd"

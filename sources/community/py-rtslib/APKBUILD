@@ -1,0 +1,68 @@
+# Contributor: Leonardo Arena <rnalrd@alpinelinux.org>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=py-rtslib
+_realname=rtslib-fb
+pkgver=2.1_p60
+_ver=${pkgver/_rc/rc}
+_ver=${_ver/_p/.fb}
+pkgrel=0
+pkgdesc="Python library that provides an object API to RisingTide Systems generic SCSI Target"
+url="https://github.com/agrover/rtslib-fb"
+arch="noarch"
+license="AGPLv3"
+depends="python"
+depends_dev=""
+makedepends="$depends_dev py-setuptools py-configobj py-ethtool py-ipaddr"
+install=""
+subpackages=
+source="https://github.com/agrover/rtslib-fb/archive/v${_ver}.tar.gz"
+
+_giturl="https://github.com/agrover/rtslib-fb.git"
+_gittag=v$_ver
+
+_builddir="$srcdir"/${_realname}-${_ver}
+
+snapshot() {
+	mkdir -p "$srcdir"
+	cd "${SRCDEST:-$srcdir}"
+	if ! [ -d $_realname-fb.git ]; then
+		git clone --bare  $_giturl || return 1
+		cd $_realname-fb.git
+	else
+		cd $_realname-fb.git
+		git fetch || return 1
+	fi
+	
+	git archive --prefix=$_realname/ -o "$SRCDEST"/$_realname-$_ver.tar.gz $_gittag
+	scp "$SRCDEST"/$_realname-$_ver.tar.gz dev.alpinelinux.org:/archive/$_realname
+}
+
+
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	return 0
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py install --root="$pkgdir"
+#	install -D -m644 specs/ib_srpt.spec $pkgdir/var/lib/target/fabric/ib_srpt.spec
+#	install -D -m644 specs/iscsi.spec $pkgdir/var/lib/target/fabric/iscsi.spec
+#	install -D -m644 specs/loopback.spec $pkgdir/var/lib/target/fabric/loopback.spec
+#	install -D -m644 specs/qla2xxx.spec $pkgdir/var/lib/target/fabric/qla2xxx.spec
+#	install -D -m644 specs/tcm_fc.spec $pkgdir/var/lib/target/fabric/tcm_fc.spec
+}
+
+md5sums="2506626ceb2ee630e1e10c12845f67ac  v2.1.fb60.tar.gz"
+sha256sums="11b664f02219e5108c4a996f5bc7445500912cff5696b3f51be2f6a1b243e957  v2.1.fb60.tar.gz"
+sha512sums="fb1b1c109c6b4ca293a6c874e5581974780166a3e0309bceb66a3df52ac12d7bb441ecdcac613bae1cde1e1f019990303d25d7ed11f9acb3a53363e74b59c3a9  v2.1.fb60.tar.gz"

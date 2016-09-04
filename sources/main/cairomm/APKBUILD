@@ -1,0 +1,34 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=cairomm
+pkgver=1.12.0
+pkgrel=0
+pkgdesc="C++ bindings to Cairo vector graphics library"
+url="http://www.cairographics.org"
+arch="all"
+license="LGPL2+ MPL 1.1"
+depends=""
+depends_dev="libsigc++-dev"
+makedepends="$depends_dev cairo-dev perl"
+subpackages="$pkgname-dev $pkgname-doc"
+source="http://www.cairographics.org/releases/cairomm-$pkgver.tar.gz"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+md5sums="481501be65bcc34a605d6bc0f57a0023  cairomm-1.12.0.tar.gz"
+sha256sums="50435aec6fdd976934b791e808993160113ad19ca53a5634a9b64ccbe55874cc  cairomm-1.12.0.tar.gz"
+sha512sums="417218caaa01424a0a98092e5cf46f4d97b194ee9a5ef94e16c59dde45d41af662f03c4a46f41d8d4f16befa7424d857845197da7d457a621298efd05b248f8d  cairomm-1.12.0.tar.gz"

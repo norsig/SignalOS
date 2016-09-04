@@ -1,0 +1,67 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=gnome-bluetooth
+pkgver=3.20.0
+pkgrel=0
+pkgdesc="The GNOME Bluetooth Subsystem"
+url="http://live.gnome.org/GnomeBluetooth"
+arch="all"
+license="GPL LGPL"
+depends="hicolor-icon-theme bluez>=5"
+makedepends="intltool gobject-introspection-dev libunique-dev
+	libnotify-dev libxi-dev libxslt py-libxml2 gnome-doc-utils
+	dbus-glib-dev gtk+3.0-dev itstool eudev-dev libcanberra-dev"
+install=
+subpackages="$pkgname-dev $pkgname-doc $pkgname-lang $pkgname-libs"
+source="http://ftp.gnome.org/pub/GNOME/sources/gnome-bluetooth/${pkgver%.*}/gnome-bluetooth-$pkgver.tar.xz
+	61-gnome-bluetooth-rfkill.rules
+	"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+prepare() {
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch)
+			msg "Applying $i"
+			patch -p1 -i "$srcdir"/$i || return 1
+			;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	DATADIRNAME=share ./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--localstatedir=/var \
+		--disable-desktop-update \
+		--disable-icon-update \
+		--disable-schemas-compile \
+		--enable-introspection \
+		|| return 1
+	make
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+	install -m644 -D "$srcdir/61-gnome-bluetooth-rfkill.rules" \
+                     "$pkgdir/lib/udev/rules.d/61-gnome-bluetooth-rfkill.rules"
+}
+
+libs() {
+	default_libs
+	replaces="gnome-bluetooth"
+	mkdir -p "$subpkgdir"/usr/share
+	mv "$pkgdir"/usr/share/icons "$subpkgdir"/usr/share/
+}
+
+md5sums="73210d66676d2d9f34b6f41ea1ceec47  gnome-bluetooth-3.20.0.tar.xz
+9fb6c8dcb5a3de3a953bf2ef42063e6e  61-gnome-bluetooth-rfkill.rules"
+sha256sums="93b3ca16b348a168d044b3f777049b7dba2a9292c4adb2751a771e3bc5e4eb53  gnome-bluetooth-3.20.0.tar.xz
+b8acb8ea2e7f3588575cffd8ea14ec50c8641f518f2ea899771a508b299ea474  61-gnome-bluetooth-rfkill.rules"
+sha512sums="6100a612bd395c95ac47a55e80272e745ff8e640cc769060bd312b707e4d921bb5549deb2ef91845f1e5340f6e454ce0898624c0c67f4f534c6c482bc898834f  gnome-bluetooth-3.20.0.tar.xz
+80b7fd0bc3e0f82c8d2d609ffed634200e63f61d9a134445df8e8511756b7fb423d338a1d12e42b91c57243097beaa3d4662856ec0507fb19a29b6de7ee9e4de  61-gnome-bluetooth-rfkill.rules"

@@ -1,0 +1,76 @@
+# Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Maintainer: Sören Tempel <soeren+alpine@soeren-tempel.net>
+pkgname=outils
+pkgver=0.4.2
+pkgrel=1
+pkgdesc="Port of some non-standard OpenBSD tools to Linux"
+url="https://github.com/chneukirchen/outils"
+arch="all"
+license="BSD ISC"
+depends=""
+depends_dev=""
+makedepends="openssl-dev linux-headers"
+install=""
+subpackages="$pkgname-doc
+	$pkgname-sha256:_tool
+	$pkgname-lndir:_tool
+	$pkgname-rdate:_tool
+	$pkgname-calendar:_tool
+	$pkgname-lam:_tool
+	$pkgname-what:_tool
+	$pkgname-rs:_tool
+	$pkgname-unvis:_tool
+	$pkgname-gzsig:_tool
+	$pkgname-md5:_tool
+	$pkgname-sha1:_tool
+	$pkgname-apply:_tool
+	$pkgname-sha512:_tool
+	$pkgname-vis:_tool
+	$pkgname-signify:_tool
+	$pkgname-jot:_tool
+	$pkgname-cksum:_tool"
+source="$pkgname-$pkgver.tar.gz::https://github.com/chneukirchen/$pkgname/archive/v$pkgver.tar.gz"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+prepare() {
+	find "$_builddir"/src -type f -exec sed -i \{\} -e "s;u_int;uint;g" \
+		-e "s;u_char;uint8_t;g" \; || return 1
+	sed -i "$_builddir"/src/liboutils/sha1.c \
+		-e "s;uint i;uint32_t i;" || return 1
+}
+
+build() {
+	make CC="$CC" CFLAGS="$CFLAGS" \
+		-C "$_builddir" || return 1
+}
+
+package() {
+	make DESTDIR="$pkgdir" install \
+		-C "$_builddir" || return 1
+}
+
+_tool() {
+	local name=$(echo $subpkgname | cut -d '-' -f2)
+	pkgdesc="$name tool from $pkgname"
+
+	if [ "$name" = "cksum" ]; then
+		depends="!coreutils $depends"
+	fi
+
+	if [ "$name" = "rdate" ]; then
+		mkdir -p "$subpkgdir"/usr/sbin
+		mv "$pkgdir"/usr/bin/$name \
+			"$subpkgdir"/usr/sbin/$name || return 1
+	else
+		mkdir -p "$subpkgdir"/usr/bin
+		mv "$pkgdir"/usr/bin/$name \
+			"$subpkgdir"/usr/bin/$name || return 1
+	fi
+
+	rmdir "$pkgdir"/usr/bin/ 2>/dev/null || true
+	rmdir "$pkgdir"/usr/ 2>/dev/null || true
+}
+
+md5sums="0c7b7f75c9f5bc9f8c9dcef1540b4a3a  outils-0.4.2.tar.gz"
+sha256sums="7eb65dc4734f1db1c2d251f62ac26b6fb947bb68fe177af79107d4ea3d627704  outils-0.4.2.tar.gz"
+sha512sums="55076431b78f42d2c918dce39888594bcd4faa394e3bc8ce6b7942ee0e299bf985d681d34f3eb755057957c2e30bef1ce18be91e96f9e68b04705082f0594119  outils-0.4.2.tar.gz"

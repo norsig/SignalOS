@@ -1,0 +1,29 @@
+#!/sbin/openrc-run
+
+description="A lightweight DNS, DHCP, RA, TFTP and PXE server"
+
+extra_started_commands="reload"
+description_reload="Clear cache and reload hosts files"
+
+command="/usr/sbin/dnsmasq"
+# Tell dnsmasq to not create pidfile, that's responsibility of init system.
+command_args="-k --pid-file= $DNSMASQ_OPTS"
+command_background="yes"
+pidfile="/run/dnsmasq.pid"
+
+depend() {
+	provide dns
+	need localmount net
+	after bootmisc
+	use logger
+}
+
+start_pre() {
+	checkpath -m 0644 -o dnsmasq:dnsmasq -f /var/lib/misc/dnsmasq.leases
+}
+
+reload() {
+	ebegin "Reloading $SVCNAME"
+	kill -HUP "$(cat $pidfile)"
+	eend $?
+}

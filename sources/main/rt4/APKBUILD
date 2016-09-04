@@ -1,0 +1,187 @@
+# Contributor: Leonardo Arena <rnalrd@alpinelinux.org>
+# Contributor: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=rt4
+pkgver=4.4.1
+pkgrel=0
+pkgdesc="Request Tracker - issue and bug tracker"
+pkgusers="rt4"
+pkggroups="rt4"
+url="http://www.bestpractical.com/rt"
+arch="noarch"
+license="GPLv2+"
+depends="perl
+	perl-term-readkey
+	perl-cache-simple-timedexpiry
+	perl-class-accessor
+	perl-dbi
+	perl-dbd-pg
+	perl-dbd-mysql
+	perl-devel-globaldestruction
+	perl-devel-stacktrace
+	perl-digest-sha1
+	perl-email-address
+	perl-getopt-long
+	perl-locale-maketext-fuzzy
+	perl-locale-maketext-lexicon
+	perl-log-dispatch
+	perl-mime-tools
+	perl-net-cidr
+	perl-regexp-common-net-cidr
+	perl-sub-exporter
+	perl-text-password-pronounceable
+	perl-text-template
+	perl-text-wrapper
+	perl-time-hires
+	perl-time-modules
+	perl-tree-simple
+	perl-universal-require
+	perl-xml-rss
+	perl-text-wikiformat
+	perl-convert-color
+	perl-data-ical
+	perl-mime-types
+	perl-html-format
+	perl-html-rewriteattributes>=0.05
+	perl-html-tree
+	perl-html-mason
+	perl-javascript-minifier
+	perl-cgi
+	perl-cgi-psgi
+	perl-cgi-emulate-psgi
+	perl-html-mason-psgihandler
+	perl-apache-session
+	perl-starlet
+	perl-html-parser
+	perl-file-sharedir
+	perl-module-versions-report
+	perl-list-moreutils
+	perl-css-squish
+	perl-dbix-searchbuilder
+	perl-regexp-ipv6
+	perl-text-quoted
+	perl-html-scrubber
+	perl-html-quoted
+	perl-datetime-locale
+	perl-fcgi
+	perl-fcgi-procmanager
+	perl-datetime
+	perl-json
+	perl-ipc-run3
+	perl-plack
+	perl-dbix-searchbuilder
+	perl-mail-tools
+	perl-crypt-eksblowfish
+	perl-datetime-format-natural
+	perl-data-guid
+	perl-html-formattext-withlinks-andtables
+	perl-role-basic
+	perl-module-refresh
+	perl-date-extract
+	perl-html-formattext-withlinks
+	perl-email-address-list
+	perl-text-quoted
+	perl-locale-maketext-fuzzy
+	perl-date-manip
+	perl-symbol-global-name
+	perl-crypt-ssleay
+	perl-mozilla-ca
+	perl-lwp-protocol-https
+	perl-crypt-ssleay
+	perl-crypt-x509
+	perl-file-which
+	perl-string-shellquote
+	perl-lwp-protocol-https
+	perl-data-page-pageset
+	perl-business-hours
+	perl-scope-upper
+	perl-html-formattext-withlinks-andtables
+	perl-css-minifier-xs
+	perl-net-ip
+	perl-javascript-minifier-xs
+	ttf-droid
+	"
+
+makedepends="autoconf"
+install="$pkgname.pre-install $pkgname.pre-upgrade"
+source="https://download.bestpractical.com/pub/rt/release/rt-$pkgver.tar.gz
+	0001-email-allow-envelope-from-overriding-from-templates.patch
+	rt-varpath.patch
+	rt-autoconf-version.patch
+	"
+builddir="$srcdir"/rt-$pkgver
+
+prepare() {
+	default_prepare || return 1  # apply patches
+
+	sed -i -e 's_$RT::BasePath/share/fonts/_/usr/share/fonts/TTF/_g' \
+		"$builddir"/etc/RT_Config.pm* || return 1
+
+	cat <<-'EOF' >> config.layout
+	# Alpine directory layout.
+	<Layout Alpine>
+	  prefix:		/usr
+	  exec_prefix:		${prefix}
+	  bindir:		${exec_prefix}/bin
+	  sbindir:		${exec_prefix}/sbin
+	  sysconfdir:		/etc/rt4
+	  mandir:		${prefix}/share/man
+	  plugindir:		${prefix}/lib/rt4/plugins
+	  libdir:		${prefix}/lib/rt4/
+	  datadir:		${prefix}/share/rt4
+	  htmldir:		${datadir}/html
+	  fontdir:		${datadir}/fonts
+	  lexdir:		${datadir}/po
+	  staticdir:		${datadir}/static
+	  manualdir:		${datadir}/doc
+	  localstatedir:	/var
+	  logfiledir:		${localstatedir}/log
+	  masonstatedir:	${localstatedir}/cache/mason_data
+	  sessionstatedir:	${localstatedir}/cache/session_data
+	  customdir:		${prefix}/local
+	  custometcdir:		${customdir}/etc
+	  customhtmldir:	${customdir}/html
+	  customlexdir:		${customdir}/po
+	  customlibdir:		${customdir}/lib
+	  customplugindir:	${customdir}/plugins
+	</Layout>
+	EOF
+}
+
+build() {
+	cd "$builddir"
+	autoconf && ./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--enable-layout=Alpine \
+		--with-rt-group=rt4 \
+		--with-web-group=rt4 \
+		--with-web-user=rt4 \
+		--disable-gpg \
+		--disable-graphviz \
+		|| return 1
+	make testdeps && make || return 1
+}
+
+package() {
+	cd "$builddir"
+
+	make -j1 DESTDIR="$pkgdir" install || return 1
+
+	# delete the droid fonts as we get them from ttf-droid
+	rm -rf "$pkgdir"/usr/share/rt4/fonts/ \
+		"$pkgdir"/usr/local
+}
+
+md5sums="3587522b92a02d3866e07dc9361ca1e2  rt-4.4.1.tar.gz
+f05ff9fc3a6888e5b3f937697fbfd00f  0001-email-allow-envelope-from-overriding-from-templates.patch
+9c1cd44a5e177a73cf92f6790fe5cd78  rt-varpath.patch
+344258a3e066d23fb684b3013eb70cd0  rt-autoconf-version.patch"
+sha256sums="f87329911020e01b39948070aec2bd7abf0c81641f0cf2f25e01c690a19f24f5  rt-4.4.1.tar.gz
+02db996b6f1b62b50364231b8ca4733bd95817c2a5c340b0934ba9f052ffbb50  0001-email-allow-envelope-from-overriding-from-templates.patch
+0d1905e29346d1a2a8e8bd5de7931721de872bccfdbb26421f3b6c00e39ca895  rt-varpath.patch
+8d7d8398af6a20f847e52408a2fb4b9ab15788cc84cd628fa65e11067df67250  rt-autoconf-version.patch"
+sha512sums="2cb797e013b14201ececec2c408257fe3a998fefdafd0944efda0236caac40be4cc45878cbda7bf9ae82b3757de6167263db2b90331d925db1f916a8420adf94  rt-4.4.1.tar.gz
+eb850824299e40a98b547a41eb83efc4edd8e7a79a9704f6bd010f97261d0068dfdb7c435c294eba6fb244c8275d3fe076c173672e6ae329e5a8cb6337ccc782  0001-email-allow-envelope-from-overriding-from-templates.patch
+8a96b5482d649e373600e0b0e04abe382f61b0ed3ec463625163182fd71569c61c236e2cf48abd496f0d747b11b604acd1f958d8d891a2333bfde7450fb995d3  rt-varpath.patch
+cac79f231e1b1915962de8e4a86812fcaa0f1f64384a34557fac860c0fb0ae33d5dfd2371c30c07310391735e7348022e62bd5d453674a41ac7e77865d79dab9  rt-autoconf-version.patch"

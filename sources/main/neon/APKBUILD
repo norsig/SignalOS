@@ -1,0 +1,38 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=neon
+pkgver=0.30.1
+pkgrel=0
+pkgdesc="HTTP and WebDAV client library with a C interface"
+url="http://www.webdav.org/neon/"
+arch="all"
+license="GPL LGPL"
+makedepends="expat-dev openssl-dev zlib-dev"
+depends=
+depends_dev="$makedepends"
+subpackages="$pkgname-dev $pkgname-doc"
+source="http://www.webdav.org/$pkgname/$pkgname-$pkgver.tar.gz"
+
+build () {
+	cd "$srcdir/$pkgname-$pkgver"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--with-ssl \
+		--with-expat \
+		--without-gssapi \
+		--disable-nls \
+		--disable-socks \
+		--enable-shared \
+		--disable-static \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$srcdir/$pkgname-$pkgver"
+	make DESTDIR="$pkgdir" install || return 1
+}
+md5sums="231adebe5c2f78fded3e3df6e958878e  neon-0.30.1.tar.gz"
+sha256sums="00c626c0dc18d094ab374dbd9a354915bfe4776433289386ed489c2ec0845cdd  neon-0.30.1.tar.gz"
+sha512sums="4a9e45c886e04c5e1a1c781f7c2544b73724e09745097b1e8dc9adf9acd79af1762d668d4f18c295d7b4148d57af797834dd3c1203f2529089f7d1972ca71e63  neon-0.30.1.tar.gz"

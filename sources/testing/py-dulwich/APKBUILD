@@ -1,0 +1,31 @@
+# Contributor: Fabian Affolter <fabian@affolter-engineering.ch>
+# Maintainer: Fabian Affolter <fabian@affolter-engineering.ch>
+pkgname=py-dulwich
+_pkgname=dulwich
+pkgver=0.10.0
+pkgrel=0
+pkgdesc="A python implementation of the Git file formats and protocols"
+url="http://www.samba.org/~jelmer/dulwich/"
+arch="all"
+license="GPL2+ or ASL 2.0"
+depends=""
+depends_dev=""
+makedepends="python-dev py-setuptools"
+install=""
+subpackages=""
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz"
+
+_builddir="$srcdir"/$_pkgname-$pkgver
+build() {
+	cd "$_builddir"
+	python setup.py build || return 1
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py install --prefix=/usr --root="$pkgdir" || return 1
+}
+
+md5sums="caa3222039ca1359c011c2d5e4f2d85b  dulwich-0.10.0.tar.gz"
+sha256sums="518bb4aa3e5ad81982bfe571594af81ab9f78feb4e33bfade6c1553afff69237  dulwich-0.10.0.tar.gz"
+sha512sums="a5aa321e1265ee6c96c763a357d204eda7b9d4d6e90e0b18898342f34b9babf4d43857b9974d6bf442f9ba4da54fed4342c5724772cc9028138e8ec75d2e4896  dulwich-0.10.0.tar.gz"

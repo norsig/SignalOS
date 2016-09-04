@@ -1,0 +1,37 @@
+#!/sbin/openrc-run
+
+description="Rapid spam filtering system"
+user=${user:-rspamd}
+group=${group:-rspamd}
+cfgfile=${cfgfile:-/etc/rspamd/rspamd.conf}
+pidfile=${pidfile:-/run/rspamd/rspamd.pid}
+command=/usr/sbin/rspamd
+command_args="-u $user -g $group -c $cfgfile -p $pidfile"
+required_files="$cfgfile"
+extra_started_commands="reload reopen"
+description_reload="Reload configuration"
+description_reopen="Reopen log files"
+
+depend() {
+	need localmount net
+	before exim postfix
+}
+
+start_pre() {
+	ebegin
+	checkpath --directory --mode 750 --owner $user:$group ${pidfile%/*}
+	$command $command_args -t >/dev/null 2>>${startuplog:-/dev/null}
+	eend $?
+}
+
+reload() {
+	ebegin "Reloading ${SVCNAME}"
+	start-stop-daemon --signal HUP --pidfile $pidfile
+	eend $?
+}
+
+reopen() {
+	ebegin "Reopening ${SVCNAME} log files"
+	start-stop-daemon --signal USR1 --pidfile $pidfile
+	eend $?
+}

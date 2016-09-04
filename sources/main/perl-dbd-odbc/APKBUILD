@@ -1,0 +1,36 @@
+# Contributor: Jeff Bilyk <jbilyk at gmail>
+# Maintainer: Leonardo Arena <rnalrd@alpinelinux.org>
+pkgname=perl-dbd-odbc
+_realpkgname=DBD-ODBC
+pkgver=1.52
+pkgrel=1
+pkgdesc="Perl CPAN DBD::ODBC module"
+url="http://search.cpan.org/dist/DBD-ODBC/"
+arch="all"
+license="GPL PerlArtistic"
+depends="perl perl-dbi"
+makedepends="perl perl-dev unixodbc-dev"
+subpackages="$pkgname-doc"
+source="http://search.cpan.org/CPAN/authors/id/M/MJ/MJEVANS/DBD-ODBC-$pkgver.tar.gz"
+
+_builddir="$srcdir"/${_realpkgname}-$pkgver
+
+prepare() {
+       return 0
+}
+
+build() {
+       cd "$_builddir"
+       PERL_MM_USE_DEFAULT=1 perl Makefile.PL INSTALLDIRS=vendor || return 1
+       make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install
+	find "$pkgdir" \( -name perllocal.pod -o -name .packlist \) -delete
+}
+
+md5sums="5f4eadbbb7f1ac6e77ab92276ccae573  DBD-ODBC-1.52.tar.gz"
+sha256sums="793c4c52e37a980171b40976d1f7160890ec2b6af03504f90c507ea68976bb9e  DBD-ODBC-1.52.tar.gz"
+sha512sums="3f49b830dbea1a97a3220b7be9cc589ea20e9dbb937240144c17dea9d9efbbb1b44139184f12a93826e57bbe1a6a43e4a09e1b56515c929f568de64419ae1ffc  DBD-ODBC-1.52.tar.gz"

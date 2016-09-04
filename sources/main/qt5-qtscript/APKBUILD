@@ -1,0 +1,47 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=qt5-qtscript
+pkgver=5.6.0
+_ver=${pkgver/_/-}
+_ver=${_ver/beta0/beta}
+_ver=${_ver/rc0/rc}
+_V=${_ver/rc/RC}
+pkgrel=0
+pkgdesc="Qt5 - QtScript component"
+url="http://qt-project.org/"
+arch="all"
+license="LGPLv2 with exceptions or GPLv3 with exceptions"
+depends=""
+depends_dev=""
+makedepends="$depends_dev qt5-qtbase-dev"
+install=""
+subpackages="$pkgname-dev"
+case $pkgver in
+*_beta*|*_rc*) _rel=development_releases;;
+*) _rel=official_releases;;
+esac
+source="http://download.qt-project.org/$_rel/qt/${pkgver%.*}/$_ver/submodules/qtscript-opensource-src-$_V.tar.xz"
+
+_builddir="$srcdir"/qtscript-opensource-src-$_V
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	qmake-qt5 && make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make INSTALL_ROOT="$pkgdir" install || return 1
+}
+
+md5sums="779e6083f0adc075b132c2706241e491  qtscript-opensource-src-5.6.0.tar.xz"
+sha256sums="ac7475197d9a0f3c7284f002390e2427fef84ec90dc590630431a848099c5042  qtscript-opensource-src-5.6.0.tar.xz"
+sha512sums="d7d692dcd1c4dbe8e4a17efa67113c6c97cf39c9b2c3f44e8a3750e55a1cea73e89e5c5ed486ff68c7b61f0e7e06f6c488c42b8e237ab989d8f9d6a88ce3166d  qtscript-opensource-src-5.6.0.tar.xz"

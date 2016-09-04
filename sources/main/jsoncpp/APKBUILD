@@ -1,0 +1,63 @@
+# Contributor: William Pitcock <nenolod@dereferenced.org>
+# Maintainer: William Pitcock <nenolod@dereferenced.org>
+pkgname=jsoncpp
+pkgver=1.7.4
+pkgrel=0
+pkgdesc="JSON C++ library"
+url="https://github.com/open-source-parsers/jsoncpp"
+arch="all"
+license="PublicDomain"
+depends=
+depends_dev=
+makedepends="$depends_dev scons"
+install=""
+subpackages="$pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/open-source-parsers/jsoncpp/archive/$pkgver.tar.gz"
+
+_builddir="$srcdir"/jsoncpp-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	# we cannot use cmake since jsoncpp is a dependency for cmake which
+	# means we would get circular buildtime deps
+	scons platform=linux-gcc || return 1
+
+	# build a proper shared lib
+	g++ -o libjsoncpp.so.0.0.0 -shared -Wl,-soname,libjsoncpp.so.0 \
+		buildscons/linux-gcc-*/src/lib_json/*.os -lpthread
+}
+
+package() {
+	cd "$_builddir"
+
+	mkdir -p "$pkgdir"/usr/lib
+	cp "$_builddir"/libjsoncpp.so.0.0.0 "$pkgdir"/usr/lib/ || return 1
+	ln -s libjsoncpp.so.0.0.0 "$pkgdir"/usr/lib/libjsoncpp.so.0 || return 1
+	ln -s libjsoncpp.so.0.0.0 "$pkgdir"/usr/lib/libjsoncpp.so || return 1
+
+	mkdir -p "$pkgdir"/usr/include/jsoncpp
+	cp -r "$_builddir"/include/json/* "$pkgdir"/usr/include/jsoncpp/ \
+		|| return 1
+	ln -s jsoncpp "$pkgdir"/usr/include/json
+
+	mkdir -p "$pkgdir"/usr/lib/pkgconfig
+	sed -e 's:@CMAKE_INSTALL_PREFIX@:/usr:g' \
+		-e 's:@LIBRARY_INSTALL_DIR@:lib:g' \
+		-e 's:@INCLUDE_INSTALL_DIR@:include/jsoncpp:g'\
+		-e "s:@JSONCPP_VERSION@:$pkgver:g"\
+		pkg-config/jsoncpp.pc.in \
+		> "$pkgdir"/usr/lib/pkgconfig/jsoncpp.pc || return 1
+}
+
+md5sums="51a6d5f8832d668daf97790ea59c4926  jsoncpp-1.7.4.tar.gz"
+sha256sums="10dcd0677e80727e572a1e462193e51a5fde3e023b99e144b2ee1a469835f769  jsoncpp-1.7.4.tar.gz"
+sha512sums="e674f6f885e2aa7258d3d3d7a14ef148b5182fd883a527b3b9d75334e778142a833bbb295796af503573b9745f889b8bc496a0b2e11dce1b9cc7f079ac538bf7  jsoncpp-1.7.4.tar.gz"

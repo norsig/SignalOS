@@ -1,0 +1,11 @@
+--- ./dhcpcd-run-hooks.in.orig
++++ ./dhcpcd-run-hooks.in
+@@ -193,7 +193,7 @@
+ 	*)		echo "$interface: $*";;
+ 	esac
+ 	if type logger >/dev/null 2>&1; then
+-		logger -i -p daemon."$lvl" -t dhcpcd-run-hooks "$interface: $*"
++		logger -p daemon."$lvl" -t dhcpcd-run-hooks "$interface: $*"
+ 	fi
+ }
+ 

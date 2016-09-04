@@ -1,0 +1,40 @@
+# Contributor: William Pitcock <nenolod@dereferenced.org>
+# Maintainer: William Pitcock <nenolod@dereferenced.org>
+pkgname=py-flask-sqlalchemy
+pkgver=2.1
+pkgrel=0
+pkgdesc="SQLAlchemy integration for Flask"
+url="http://flask.pocoo.org/"
+arch="noarch"
+license="MIT"
+depends="python py-flask py-sqlalchemy"
+depends_dev=""
+makedepends="python-dev py-setuptools"
+install=""
+subpackages=""
+source="https://files.pythonhosted.org/packages/source/F/Flask-SQLAlchemy/Flask-SQLAlchemy-$pkgver.tar.gz"
+
+_builddir="$srcdir"/Flask-SQLAlchemy-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	python setup.py build || return 1
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py install --prefix=/usr --root="$pkgdir" || return 1
+}
+
+md5sums="dc15fe08b07b434d3d2c4063b4674b72  Flask-SQLAlchemy-2.1.tar.gz"
+sha256sums="c5244de44cc85d2267115624d83faef3f9e8f088756788694f305a5d5ad137c5  Flask-SQLAlchemy-2.1.tar.gz"
+sha512sums="023f3dd011a57768e921928dd3df791a54c64bb8a0cc1bb545dbb8e16dda263b730da74a0d400e5a057819830dd4cd014a642098a081c956a7ea8a2d37ec112a  Flask-SQLAlchemy-2.1.tar.gz"

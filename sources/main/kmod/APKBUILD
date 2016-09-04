@@ -1,0 +1,92 @@
+# Contributor: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=kmod
+pkgver=23
+pkgrel=0
+pkgdesc="Linux kernel module management utilities"
+url="http://git.kernel.org/?p=utils/kernel/kmod/kmod.git;a=summary"
+arch="all"
+license="GPL2+"
+depends=""
+depends_dev=""
+# gnu sed is needed for symlink
+makedepends_build="libxslt"
+makedepends_host="$depends_dev zlib-dev xz-dev"
+makedepends="$makedepends_build $makedepends_host"
+install=""
+triggers="$pkgname.trigger=/lib/modules/*"
+subpackages="$pkgname-dev $pkgname-doc
+	$pkgname-bash-completion:bashcomp"
+source="http://ftp.kernel.org/pub/linux/utils/kernel/kmod/kmod-$pkgver.tar.xz
+	strndupa.patch
+	kmod-static-nodes.initd
+	"
+
+_builddir="$srcdir"/kmod-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--bindir=/bin \
+		--sysconfdir=/etc \
+		--with-rootlibdir=/lib \
+		--with-zlib \
+		--with-xz \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+	local i
+	mkdir -p "$pkgdir"/sbin
+	for i in lsmod rmmod insmod modinfo modprobe depmod; do
+		ln -sf ../bin/kmod "$pkgdir"/sbin/$i || return 1
+	done
+	for i in lsmod modinfo; do
+		ln -s kmod "$pkgdir"/bin/$i || return 1
+	done
+	install -Dm755 "$srcdir"/kmod-static-nodes.initd \
+		"$pkgdir"/etc/init.d/kmod-static-nodes || return 1
+}
+
+libs() {
+	pkgdesc="Libraries to handle kernel module loading and unloading"
+	mkdir -p "$subpkgdir"/
+	mv "$pkgdir"/lib "$subpkgdir"/
+}
+
+bashcomp() {
+	pkgdesc="Bash completion for $pkgname"
+	arch="noarch"
+	depends=""
+	install_if="bash-completion $pkgname=$pkgver-r$pkgrel"
+
+	mkdir -p "$subpkgdir"/usr/share
+	mv "$pkgdir"/usr/share/bash-completion "$subpkgdir"/usr/share/ \
+		|| return 1
+}
+
+
+md5sums="3cf469f40ec2ed51f56ba45ea03793e7  kmod-23.tar.xz
+a347d68599a0ab4c2abd53c89271cf67  strndupa.patch
+32a5e4e056ff0b9f62654f46c982df5b  kmod-static-nodes.initd"
+sha256sums="d303d5519faec9d69e1132f6b37db2579db17a7fb5c1517da0115d03ba168155  kmod-23.tar.xz
+aea9bdad0e6d0c6c5d9c3f1fe1f84f85babcd52b3077336552ae73ccbc4b0a36  strndupa.patch
+d214138be8fcf3ac4fe6b89d138b26c5db9693d02314cb795db3eea66a1683e9  kmod-static-nodes.initd"
+sha512sums="84b18d35117b33c48fd9b732a584a9f94caef553e371bd4e68953540f46fc6c7145c8c7163df898875437ad56e1a47e89be26531314299bce0026c46da9dd3c0  kmod-23.tar.xz
+f2ea3527bfba182c5e15557c224a5bba8c7e2ea3d21cf604e6eb2277226dcf983c3aeb9ac44a322c7f2b4942b35135da999d63a5b946b829d3f3b09c050a0f17  strndupa.patch
+7f0f89fe98167f71b7924f341ba701d001158225463c2f5e39f706a0224b1e952ee901b441f28cb15787563e83bb6e54eb752bf8669ae7c0ffbb11984542f354  kmod-static-nodes.initd"

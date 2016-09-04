@@ -1,0 +1,44 @@
+# Contributor: Valery Kartel <valery.kartel@gmail.com>
+# Contributor: Carlo Landmeter <clandmeter@gmail.com>
+# Maintainer: Carlo Landmeter <clandmeter@gmail.com>
+pkgname=lftp
+pkgver=4.7.3
+pkgrel=0
+pkgdesc="LFTP is sophisticated ftp/http client"
+url="http://lftp.yar.ru/"
+arch="all"
+license="GPL"
+depends=
+makedepends="openssl-dev readline-dev ncurses-dev"
+subpackages="$pkgname-doc"
+source="http://lftp.yar.ru/ftp/$pkgname-$pkgver.tar.xz"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+
+build() {
+	cd "$_builddir"
+
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--with-openssl \
+		--with-modules \
+		--disable-nls \
+		--disable-static \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make -j1 DESTDIR="$pkgdir" install
+	rm -f "$pkgdir"/usr/lib/charset.alias
+	mkdir -p "$pkgdir"/usr/share/doc/$pkgname
+	mv "$pkgdir"/usr/share/$pkgname "$pkgdir"/usr/share/doc/
+}
+
+md5sums="23deda16014412c802f095fbaa0bebee  lftp-4.7.3.tar.xz"
+sha256sums="3b22259cdc4c1a6ae349057d16bda4b4816929e04d223242ab8927bc31a48e7c  lftp-4.7.3.tar.xz"
+sha512sums="1123e322a4c4f85ced4ef57c0af80b9b20d223c2770293ada3d8ca870fe159b62c6ee8d01a8c6be50e7ec00f3e6729a46c09db3aa776471825a6998792f1250d  lftp-4.7.3.tar.xz"

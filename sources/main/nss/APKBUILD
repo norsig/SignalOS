@@ -1,0 +1,156 @@
+# Contributor: Łukasz Jendrysik <scadu@yandex.com>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=nss
+pkgver=3.23
+_ver=${pkgver//./_}
+pkgrel=0
+pkgdesc="Mozilla Network Security Services"
+url="http://www.mozilla.org/projects/security/pki/nss/"
+arch="all"
+license="MPL GPL"
+depends=
+makedepends="nspr-dev sqlite-dev zlib-dev perl bsd-compat-headers"
+subpackages="$pkgname-dev $pkgname-tools"
+source="http://ftp.mozilla.org/pub/security/$pkgname/releases/NSS_${_ver}_RTM/src/$pkgname-$pkgver.tar.gz
+	nss.pc.in
+	nss-config.in
+	add_spi+cacert_ca_certs.patch
+	gcc6-fixes.patch
+	"
+depends_dev="nspr-dev"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+prepare() {
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+
+	# Respect LDFLAGS
+	sed -i -e 's/\$(MKSHLIB) -o/\$(MKSHLIB) \$(LDFLAGS) -o/g' \
+		nss/coreconf/rules.mk
+}
+
+build() {
+	cd "$_builddir"
+	unset CFLAGS
+	unset CXXFLAGS
+	export BUILD_OPT=1
+	export PKG_CONFIG_ALLOW_SYSTEM_LIBS=1
+	export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
+	export FREEBL_NO_DEPEND=0
+	export NSS_USE_SYSTEM_SQLITE=1
+	export NSPR_INCLUDE_DIR=`pkg-config --cflags-only-I nspr | sed 's/-I//'`
+	export NSPR_LIB_DIR=`pkg-config --libs-only-L nspr | sed 's/-L.//'`
+	case "$CARCH" in
+		*64*) export USE_64=1;;
+	esac
+	make -j 1 -C nss/coreconf || return 1
+	make -j 1 -C nss/lib/dbm || return 1
+	make -j 1 -C nss || return 1
+}
+
+package() {
+	replaces="nss-dev libnss"
+
+	cd "$_builddir"
+
+	install -m755 -d "$pkgdir"/usr/lib/pkgconfig
+	install -m755 -d "$pkgdir"/usr/bin
+	install -m755 -d "$pkgdir"/usr/include/nss
+
+	NSS_VMAJOR=`awk '/#define.*NSS_VMAJOR/ {print $3}' nss/lib/nss/nss.h `
+	msg "DEBUG: $NSS_VMAJOR"
+	NSS_VMINOR=`awk '/#define.*NSS_VMINOR/ {print $3}' nss/lib/nss/nss.h`
+	NSS_VPATCH=`awk '/#define.*NSS_VPATCH/ {print $3}' nss/lib/nss/nss.h`
+
+	# pkgconfig files
+	sed "$srcdir"/nss.pc.in \
+		-e "s,%libdir%,/usr/lib,g" \
+		-e "s,%prefix%,/usr,g" \
+		-e "s,%exec_prefix%,/usr/bin,g" \
+		-e "s,%includedir%,/usr/include/nss,g" \
+		-e "s,%NSPR_VERSION%,$pkgver,g" \
+		-e "s,%NSS_VERSION%,$pkgver,g" \
+		> "$pkgdir"/usr/lib/pkgconfig/nss.pc \
+		|| return 1
+	ln -sf nss.pc "$pkgdir"/usr/lib/pkgconfig/mozilla-nss.pc || return 1
+	chmod 644 "$pkgdir"/usr/lib/pkgconfig/*.pc || return 1
+
+	# nss-config
+	sed "$srcdir"/nss-config.in \
+		-e "s,@libdir@,/usr/lib,g" \
+		-e "s,@prefix@,/usr/bin,g" \
+		-e "s,@exec_prefix@,/usr/bin,g" \
+		-e "s,@includedir@,/usr/include/nss,g" \
+		-e "s,@MOD_MAJOR_VERSION@,${NSS_VMAJOR},g" \
+		-e "s,@MOD_MINOR_VERSION@,${NSS_VMINOR},g" \
+		-e "s,@MOD_PATCH_VERSION@,${NSS_VPATCH},g" \
+		> "$pkgdir"/usr/bin/nss-config || return 1
+	chmod 755 "$pkgdir"/usr/bin/nss-config || return 1
+	local minor=${pkgver#*.}
+	minor=${minor%.*}
+	for file in libsoftokn3.so libfreebl3.so libnss3.so libnssutil3.so \
+			libssl3.so libsmime3.so libnssckbi.so libnssdbm3.so; do
+		install -m755 dist/*.OBJ/lib/${file} \
+			"$pkgdir"/usr/lib/${file}.$minor || return 1
+		ln -s $file.$minor "$pkgdir"/usr/lib/$file
+	done
+	install -m644 dist/*.OBJ/lib/libcrmf.a "$pkgdir"/usr/lib/ \
+		|| return 1
+	install -m644 dist/*.OBJ/lib/*.chk "$pkgdir"/usr/lib/ \
+		|| return 1
+
+	for file in certutil cmsutil crlutil modutil pk12util shlibsign \
+			signtool signver ssltap; do
+		install -m755 dist/*.OBJ/bin/${file} "$pkgdir"/usr/bin/\
+			|| return 1
+	done
+	install -m644 dist/public/nss/*.h "$pkgdir"/usr/include/nss/ \
+		|| return 1
+}
+
+dev() {
+	local i= j=
+	depends="$pkgname $depends_dev"
+
+	mkdir -p "$subpkgdir"/usr/bin
+	mv "$pkgdir"/usr/bin/nss-config "$subpkgdir"/usr/bin
+
+	cd "$pkgdir" || return 0
+	for i in usr/include usr/lib/pkgconfig usr/lib/*.a; do
+		if [ -e "$pkgdir/$i" ] || [ -L "$pkgdir/$i" ]; then
+			d="$subpkgdir/${i%/*}"  # dirname $i
+			mkdir -p "$d"
+			mv "$pkgdir/$i" "$d"
+			rmdir "$pkgdir/${i%/*}" 2>/dev/null
+		fi
+	done
+
+	return 0
+}
+
+tools() {
+	pkgdesc="Tools for the Network Security Services"
+	replaces="nss"
+	mkdir -p "$subpkgdir"/usr/
+	mv "$pkgdir"/usr/bin "$subpkgdir"/usr/
+}
+
+md5sums="21c3fed84441b2ab4c50ac626f6517e7  nss-3.23.tar.gz
+c547b030c57fe1ed8b77c73bf52b3ded  nss.pc.in
+46bee81908f1e5b26d6a7a2e14c64d9f  nss-config.in
+981e0df9e9cb7a9426b316f68911fb17  add_spi+cacert_ca_certs.patch
+1941c6e6ca6506eb7b4d71e99275ef0d  gcc6-fixes.patch"
+sha256sums="94b383e31c9671e9dfcca81084a8a813817e8f05a57f54533509b318d26e11cf  nss-3.23.tar.gz
+b9f1428ca2305bf30b109507ff335fa00bce5a7ce0434b50acd26ad7c47dd5bd  nss.pc.in
+e44ac5095b4d88f24ec7b2e6a9f1581560bd3ad41a3d198596d67ef22f67adb9  nss-config.in
+592aa85184c5edb076c3355f85e50373a59dfcd06a4f4a79621f43df19404c1e  add_spi+cacert_ca_certs.patch
+daffc834584e033db45464963fb0ec240011babd0b004a2fdd558b0f2f943b37  gcc6-fixes.patch"
+sha512sums="f3e388a415493685faa6df932e9e968af41ea2e8e4cba3fbd539c60177443e4042e8d2e2bfe74183552e14522d49048be2f80fbe038bdbd499971e82abf2cc32  nss-3.23.tar.gz
+75dbd648a461940647ff373389cc73bc8ec609139cd46c91bcce866af02be6bcbb0524eb3dfb721fbd5b0bc68c20081ed6f7debf6b24317f2a7ba823e8d3c531  nss.pc.in
+2971669e128f06a9af40a5ba88218fa7c9eecfeeae8b0cf42e14f31ed12bf6fa4c5ce60289e078f50e2669a9376b56b45d7c29d726a7eac69ebe1d1e22dc710b  nss-config.in
+6e04556858499aec465d6670818465327ba2cb099061c2afee4b5cac8aa61938e0095906acfb38df6a1b70a6bde6dd69f08bb4c00a9d188e4cb3131b26c1bc16  add_spi+cacert_ca_certs.patch
+3c6c0221a123fc8623ab8c9900ab19b7ca38fb5ae2356f6856f8b6f20c72965a4c14d6da9fa4aa8fc178df471551ad1cf3598bada599d660585af040095a42a7  gcc6-fixes.patch"

@@ -1,0 +1,38 @@
+# Contributor: August Klein <amatcoder@gmail.com>
+# Maintainer: August Klein <amatcoder@gmail.com>
+pkgname=crypto++
+_pkgname=cryptopp
+pkgver=5.6.3
+_pkgver=${pkgver//./}
+pkgrel=0
+pkgdesc="A free C++ class library of cryptographic schemes"
+url="http://www.cryptopp.com"
+arch="all"
+license="Boost"
+depends=""
+depends_dev="$pkgname"
+makedepends=""
+subpackages="$pkgname-dev"
+source="http://www.cryptopp.com/${_pkgname}${_pkgver}.zip"
+
+builddir="$srcdir"
+
+build() {
+	cd "$builddir"
+	sed -i -e 's/^CXXFLAGS/#CXXFLAGS/' GNUmakefile || return 1
+	export CXXFLAGS="${CXXFLAGS} -DNDEBUG -fPIC"
+	make -f GNUmakefile || return 1
+	make libcryptopp.so || return 1
+}
+
+package() {
+	cd "$builddir"
+	install -Dm644 libcryptopp.so "$pkgdir"/usr/lib/libcryptopp.so || return 1
+	install -Dm644 License.txt "$pkgdir"/usr/share/licenses/$pkgname/LICENSE || return 1
+	mkdir -p "$pkgdir"/usr/include/cryptopp/ || return 1
+	install -m644 *.h "$pkgdir"/usr/include/cryptopp/ || return 1
+}
+
+md5sums="3c5b70e2ec98b7a24988734446242d07  cryptopp563.zip"
+sha256sums="9390670a14170dd0f48a6b6b06f74269ef4b056d4718a1a329f6f6069dc957c9  cryptopp563.zip"
+sha512sums="b3b963e87d937aeae03aa41849c23bb03fc0a8e627afddb8aa74bc07edf51949888aaa25cb4888053455524e7c5dd8de1f11e227acfab3a3ea344285b6408ce0  cryptopp563.zip"

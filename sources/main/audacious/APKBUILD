@@ -1,0 +1,55 @@
+# Contributor: Łukasz Jendrysik <scadu@yandex.com>
+# Contributor: William Pitcock <nenolod@dereferenced.org>
+# Maintainer: William Pitcock <nenolod@dereferenced.org>
+pkgname=audacious
+pkgver=3.7.2
+pkgrel=2
+pkgdesc="A playlist-oriented media player with multiple interfaces"
+url="http://audacious-media-player.org/"
+arch="all"
+license="ISC"
+depends=""
+depends_dev="gtk+2.0-dev dbus-glib-dev"
+makedepends="$depends_dev libguess-dev>=1.2 libxml2-dev autoconf automake"
+install=
+subpackages="$pkgname-dev $pkgname-doc $pkgname-lang $pkgname-dbg"
+source="http://distfiles.audacious-media-player.org/$pkgname-$pkgver.tar.bz2"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+prepare() {
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch)
+			msg "Applying $i..."
+			patch -s -p1 -N -i "$srcdir"/$i || return 1
+			;;
+		esac
+	done
+
+	msg "Rebuilding configure..."
+	aclocal -I m4 && autoheader && autoconf || return 1
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--enable-chardet \
+		|| return 1
+	make || return 1
+	return 0
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+md5sums="1e7fe437d7e975da36f98c3e1fbf51e5  audacious-3.7.2.tar.bz2"
+sha256sums="04f9eaba4522ce9674e6ed8afc7bd6b5fa9a1e240f8090589fc1874f6659f340  audacious-3.7.2.tar.bz2"
+sha512sums="6cab703dfab9d1479ddf94f6fb71cef961adaa45c56568a211a11851c0ec6a736e81080cc3673f6e1b131245147c55af32ab8eeb9ba1773b07b675ab658d6747  audacious-3.7.2.tar.bz2"

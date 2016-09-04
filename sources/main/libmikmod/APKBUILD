@@ -1,0 +1,48 @@
+# Contributor: William Pitcock <nenolod@dereferenced.org>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=libmikmod
+pkgver=3.3.9
+pkgrel=0
+pkgdesc="module playing library"
+url="http://mikmod.shlomifish.org"
+arch="all"
+license="GPL"
+depends=
+depends_dev=
+makedepends="alsa-lib-dev $depends_dev"
+install=""
+subpackages="$pkgname-dev $pkgname-doc"
+source="http://kent.dl.sourceforge.net/project/mikmod/libmikmod/$pkgver/libmikmod-$pkgver.tar.gz"
+
+_builddir="${srcdir}/${pkgname}-${pkgver}"
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	# build fails with bash
+	export CONFIG_SHELL="/bin/sh"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--enable-alsa \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+md5sums="b84e0badd3a85b9545a732631891ab7e  libmikmod-3.3.9.tar.gz"
+sha256sums="3b65c1a5cae07a2771cbb82fc70ac75d99f4b3e35ac1d4cd2177865093df2893  libmikmod-3.3.9.tar.gz"
+sha512sums="260a3b46575bbfa5d7117d048293ea4271f1675d00e7cdb82f068493a3bfc69af3a10a35bd6a8a647bbe6808796a795a801c5c040d5d1eedffad455f0cbc2736  libmikmod-3.3.9.tar.gz"

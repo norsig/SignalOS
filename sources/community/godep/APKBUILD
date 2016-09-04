@@ -1,0 +1,44 @@
+# Contributor: Carlo Landmeter <clandmeter@gmail.com>
+# Maintainer:
+pkgname=godep
+pkgver=35
+pkgrel=0
+pkgdesc="Dependency tool for go"
+url="http://github.com/tools/godep"
+arch="all"
+license="BSD"
+depends=""
+depends_dev=""
+makedepends="$depends_dev go mercurial"
+install=""
+subpackages=""
+options="!strip"
+source="${pkgname}-${pkgver}.tar.gz::https://github.com/tools/${pkgname}/archive/v${pkgver}.tar.gz"
+
+_builddir="${srcdir}/${pkgname}-${pkgver}"
+
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	mkdir -p ${_builddir}/src/github.com/tools
+	ln -sf ${_builddir} ${_builddir}/src/github.com/tools/${pkgname}
+	GOPATH="${_builddir}" go build
+}
+
+package() {
+	cd "$_builddir"
+	install -Dm755 godep-${pkgver}\
+		"${pkgdir}/usr/bin/godep" || return 1
+}
+md5sums="ab8df57c3e200421ece9bb723678b81d  godep-35.tar.gz"
+sha256sums="381dbf28a68356ed1ec650559d673b7631e2e85e88afeba4ec0e52a6ca46656f  godep-35.tar.gz"
+sha512sums="df296d894ad802eab6e300a25339ab6ec7cf79399ce237393d35444cf2bcb07c1d4fcab517acae029b0963020884fab61d027eb3466c3871e43e8d1daec316ad  godep-35.tar.gz"

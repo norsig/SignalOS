@@ -1,0 +1,46 @@
+# Contributor: Alan Lacerda <alacerda@alpinelinux.org>
+# Maintainer: Alan Lacerda <alacerda@alpinelinux.org>
+pkgname=mate-backgrounds
+pkgver=1.14.0
+pkgrel=0
+pkgdesc="Background images and data for MATE"
+url="https://github.com/mate-desktop/mate-backgrounds"
+arch="noarch"
+license="GPL2"
+depends="mate-common"
+depends_dev=""
+makedepends="$depends_dev intltool"
+install=""
+subpackages=""
+source="http://pub.mate-desktop.org/releases/${pkgver%.*}/$pkgname-$pkgver.tar.xz"
+
+_builddir="$srcdir/$pkgname-$pkgver"
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--sysconfdir=/etc \
+		--prefix=/usr \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="${pkgdir}" install || return 1
+}
+
+md5sums="28f183f658f6b648cc86d5f0973acb90  mate-backgrounds-1.14.0.tar.xz"
+sha256sums="1e01411969496e766db479b53ea1caa66ae7e3b350d011aa112840dcffd30751  mate-backgrounds-1.14.0.tar.xz"
+sha512sums="01bbe17b6c42626a056e3648bdbaef5b3fac950c7da951641634f543b496b24f5b0777d85269d6905f0b08e636eb50e19a348030b874e6c91208434c042d204f  mate-backgrounds-1.14.0.tar.xz"

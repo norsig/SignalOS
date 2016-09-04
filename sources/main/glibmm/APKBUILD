@@ -1,0 +1,49 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=glibmm
+pkgver=2.48.1
+pkgrel=0
+pkgdesc="C++ wrapper for the GLib toolkit"
+url="http://gtkmm.sourceforge.net/"
+arch="all"
+license="LGPL"
+depends=
+makedepends="glib-dev libsigc++-dev"
+subpackages="$pkgname-dev $pkgname-doc"
+depends_dev="libsigc++-dev"
+source="http://ftp.gnome.org/pub/GNOME/sources/$pkgname/${pkgver%.*}/$pkgname-$pkgver.tar.xz"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+prepare() {
+	cd "$_builddir"
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+dev() {
+	mkdir -p "$subpkgdir"/usr/lib/
+	mv "$pkgdir"/usr/lib/glibmm-2.4 "$subpkgdir"/usr/lib/
+	default_dev
+}
+
+doc() {
+	default_doc
+	mkdir -p "$subpkgdir"/usr/share/
+	mv "$pkgdir"/usr/share/devhelp "$subpkgdir"/usr/share/
+}
+
+md5sums="f08b2c7f09b984b0df05f0bf4d20ad11  glibmm-2.48.1.tar.xz"
+sha256sums="dc225f7d2f466479766332483ea78f82dc349d59399d30c00de50e5073157cdf  glibmm-2.48.1.tar.xz"
+sha512sums="280949315e592ff8f3f7cfa6376d129211ffb6832146578d6533c4792aafef8b4ea5354943d5623ebf34ce31b8c71b6055a51de2b8ae8cfb419e6e033d9f98fa  glibmm-2.48.1.tar.xz"

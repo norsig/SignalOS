@@ -1,0 +1,6 @@
+#!/bin/sh
+
+adduser -S -D -H -h /usr/share/logstash -s /sbin/nologin \
+	-G daemon -g "Logstash User" logstash 2>/dev/null
+
+exit 0

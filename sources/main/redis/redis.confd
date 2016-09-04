@@ -1,0 +1,9 @@
+# Redis user.
+REDIS_USER="redis"
+
+# Redis group.
+REDIS_GROUP="redis"
+
+# Redis configuration file.
+REDIS_CONF="/etc/redis.conf"
+

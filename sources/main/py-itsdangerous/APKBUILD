@@ -1,0 +1,41 @@
+# Contributor: Fabian Affolter <fabian@affolter-engineering.ch>
+# Maintainer: Eivind Uggedal <eivind@uggedal.com>
+pkgname=py-itsdangerous
+_pkgname=itsdangerous
+pkgver=0.24
+pkgrel=0
+pkgdesc="A Python helper to pass trusted data to untrusted environments"
+url="http://github.com/mitsuhiko/itsdangerous"
+arch="noarch"
+license="BSD"
+depends="python"
+depends_dev=""
+makedepends="python-dev py-setuptools"
+install=""
+subpackages=""
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz"
+
+_builddir="$srcdir"/$_pkgname-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	python setup.py build || return 1
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py install --prefix=/usr --root="$pkgdir" || return 1
+}
+
+md5sums="a3d55aa79369aef5345c036a8a26307f  itsdangerous-0.24.tar.gz"
+sha256sums="cbb3fcf8d3e33df861709ecaf89d9e6629cff0a217bc2848f1b41cd30d360519  itsdangerous-0.24.tar.gz"
+sha512sums="2863b6e5fda178db59bd214c6d24d04422c1021bb41bf11598aba1cbc43053aff3bb1e0539940b5769de04b68c03e8bd01d728dcbfc4bd0ba05867688574a297  itsdangerous-0.24.tar.gz"

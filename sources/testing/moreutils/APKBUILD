@@ -1,0 +1,39 @@
+# Contributor: Francesco Colista <fcolista@alpinelinux.org>
+# Maintainer: Francesco Colista <fcolista@alpinelinux.org>
+pkgname=moreutils
+pkgver=0.59
+pkgrel=0
+pkgdesc="A growing collection of the unix tools that nobody thought to write thirty years ago"
+url="http://joeyh.name/code/moreutils/"
+arch="all"
+license="GPL"
+depends="perl perl-timedate perl-ipc-run"
+depends_dev=""
+makedepends="$depends_dev docbook-xsl docbook-xml perl-xml-sax libxslt-dev linux-headers"
+install=""
+subpackages="$pkgname-doc"
+source="http://ftp.de.debian.org/debian/pool/main/m/moreutils/moreutils_$pkgver.orig.tar.gz
+docbook-xsl.patch"
+
+builddir="$srcdir"/$pkgname-$pkgver.orig
+
+build() {
+	cd "$builddir"
+	make
+}
+
+package() {
+	cd "$builddir"
+	make PREFIX=$pkgdir/usr install
+	chmod 0644 $pkgdir/usr/share/man/man1/*
+	mv $pkgdir/usr/share/man/man1/ts.1 $pkgdir/usr/share/man/man1/ts.1moreutils
+	mv $pkgdir/usr/share/man/man1/parallel.1 $pkgdir/usr/share/man/man1/parallel-moreutils.1
+	mv $pkgdir/usr/bin/parallel $pkgdir/usr/bin/parallel-moreutils
+}
+
+md5sums="22b26cebe53afae604f74f4135628217  moreutils_0.59.orig.tar.gz
+a8900e4699ffefb5393a954c6de0fe49  docbook-xsl.patch"
+sha256sums="a48e11c3197bf79a7bfaa121423e64626e3381d9fedc91d606e9724ae498d1b4  moreutils_0.59.orig.tar.gz
+7c83aaf6edf29cddb0c7eb1d57d5abf1999eee2dd21cd5279d8d68869d4a5b2e  docbook-xsl.patch"
+sha512sums="2cbe56a04476f5266bcb265c2c328ad61e2200eb1617ab632f1dcbefd08e0228652c82092cda7e12a539300cebf4550f766561f95de386ca4b3c2a491120f3ed  moreutils_0.59.orig.tar.gz
+3f8a85ff9445bab82db40cd8a210ea69597ec72bf263ce165cfe8da5bf15b2283cb1e840e86e0a710b4f6191616abad40e79ca0d2eb7029a4b7c1afcd3d91783  docbook-xsl.patch"

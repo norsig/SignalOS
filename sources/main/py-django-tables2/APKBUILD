@@ -1,0 +1,37 @@
+# Contributor: Kaarle Ritvanen <kaarle.ritvanen@datakunkku.fi>
+# Maintainer: Kaarle Ritvanen <kaarle.ritvanen@datakunkku.fi>
+pkgname=py-django-tables2
+pkgver=1.0.4
+pkgrel=1
+pkgdesc="Table/data-grid framework for Django"
+url=https://github.com/bradleyayers/django-tables2/
+arch=noarch
+license=BSD
+depends="py-django py-six"
+makedepends=py-setuptools
+source="https://files.pythonhosted.org/packages/source/d/django-tables2/django-tables2-$pkgver.tar.gz"
+
+_builddir=$srcdir/django-tables2-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./setup.py build
+}
+
+package() {
+	cd "$_builddir"
+	./setup.py install --root "$pkgdir"
+}
+
+md5sums="5ae7992ac161485a9d2546346e61c284  django-tables2-1.0.4.tar.gz"
+sha256sums="801b1df349f07f5b548cf4b3d5cddfc26e5969079c7d490f179fb649e76d24af  django-tables2-1.0.4.tar.gz"
+sha512sums="ae1381ab23b93759caef259b5063c2149a71c9a808bc4f0a621de454872b354d03e8d7002a95de693e4d3c456366341ac30f200edac069244a0b97d156295953  django-tables2-1.0.4.tar.gz"

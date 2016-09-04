@@ -1,0 +1,360 @@
+# Maintainer: Kaarle Ritvanen <kaarle.ritvanen@datakunkku.fi>
+# Contributor: Valery Kartel <valery.kartel@gmail.com>
+pkgname=apache2
+_pkgreal=httpd
+pkgver=2.4.23
+pkgrel=4
+pkgdesc="A high performance Unix-based HTTP server"
+url="http://httpd.apache.org/"
+arch="all"
+license="ASL 2.0"
+depends=""
+install="$pkgname.pre-install $pkgname.pre-upgrade"
+pkgusers="apache"
+pkggroups="apache"
+makedepends="apr-dev apr-util-dev autoconf automake libxml2-dev lua-dev
+             nghttp2-dev openssl-dev pcre-dev sed zlib-dev"
+subpackages="$pkgname-dev
+             $pkgname-doc
+             $pkgname-error:_error
+             $pkgname-http2
+             $pkgname-icons
+             $pkgname-ldap
+             $pkgname-lua:_lua
+             $pkgname-proxy-html:proxy_html
+             $pkgname-proxy
+             $pkgname-ssl
+             $pkgname-utils
+             $pkgname-webdav"
+source="http://archive.apache.org/dist/$_pkgreal/$_pkgreal-$pkgver.tar.bz2
+	apache2.confd
+	apache2.logrotate
+	apache2.initd
+        http2.conf
+	ldap.conf
+	proxy.conf
+	lua.conf
+	alpine.layout
+	conf/0001-httpd.conf-ServerRoot.patch
+	conf/0002-httpd.conf-ServerTokens.patch
+	conf/0003-httpd.conf-ServerSignature.patch
+	conf/0004-httpd.conf-User-Group.patch
+	conf/0005-httpd.conf-ErrorLog-CustomLog-TransferLog.patch
+	conf/0006-httpd-dav.conf-DavLockDB.patch
+	conf/0007-httpd-ssl.conf-SSLSessionCache.patch
+	conf/0008-httpd-ssl.conf-SSLRandomSeed.patch
+	conf/0009-httpd-ssl.conf-SSL-File.patch
+	conf/0010-httpd-ssl.conf-SSL-CipherSuite.patch
+	conf/0011-httpd.conf-IncludeOptional.patch
+	conf/0012-httpd.conf-MIMEMagicFile.patch
+	conf/0013-httpd-.conf-IfModule.patch
+	conf/0014-httpd-.conf-LoadModule.patch
+	CVE-2016-5387.patch
+	"
+options="suid"
+
+_builddir="$srcdir"/$_pkgreal-$pkgver
+
+prepare() {
+	cd "$_builddir"
+
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$(basename $i) || return 1;;
+		esac
+	done
+
+	cat "$srcdir/alpine.layout" >> config.layout
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--prefix=/usr \
+		--enable-layout=Alpine \
+		--enable-so \
+		--enable-suexec \
+		--with-suexec-caller=apache \
+		--with-suexec-docroot=/var/www \
+		--with-suexec-logfile=/var/log/apache2/suexec.log \
+		--with-suexec-bin=/usr/sbin/suexec \
+		--with-suexec-uidmin=99 \
+		--with-suexec-gidmin=99 \
+		--with-apr=/usr/bin/apr-1-config \
+		--with-apr-util=/usr/bin/apu-1-config \
+		--with-pcre=/usr \
+		--enable-mods-shared=all \
+		--enable-mpms-shared=all \
+		--with-mpm=prefork \
+		--enable-ssl \
+		--with-ssl \
+		--enable-proxy \
+		--enable-cache \
+		--enable-disk-cache \
+		--enable-mem-cache \
+		--enable-file-cache \
+		--enable-ldap \
+		--enable-authnz-ldap \
+		--enable-cgid \
+		--enable-cgi \
+		--enable-authn-anon \
+		--enable-authn-alias \
+		--disable-imagemap \
+		--enable-proxy-connect \
+		--enable-proxy-http \
+		--enable-proxy-ftp \
+		--enable-deflate \
+		--enable-dbd \
+		--enable-exception-hook \
+		--enable-dav \
+		--enable-dav-fs \
+		--enable-dav-lock \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make -j1 DESTDIR="$pkgdir" install || return 1
+
+	# config
+	rm -r "$pkgdir"/etc/apache2/extra/httpd-vhosts.conf \
+		"$pkgdir"/etc/apache2/original || return 1
+	mv "$pkgdir"/etc/apache2/extra "$pkgdir"/etc/apache2/conf.d || return 1
+	for file in "$pkgdir"/etc/apache2/conf.d/httpd-*; do
+		mv "$file" \
+			"$(dirname $file)/${file#$pkgdir/etc/apache2/conf.d/httpd-}" || \
+			return 1
+	done
+	sed -Ei \
+		's:^(\t?#?LoadModule .+ )lib/apache2/:\1modules/:;ta;b;:a;s/^#?LoadModule (dav.*|lbmethod_.+|.*ldap|lua|proxy.*|ssl|xml2enc)_module //;tb;b;:b;d' \
+		"$pkgdir"/etc/apache2/httpd.conf
+
+	# init scripts and logrotate
+	install -D -m755 "$srcdir"/apache2.initd \
+		"$pkgdir"/etc/init.d/apache2 || return 1
+	install -D -m644 "$srcdir"/apache2.logrotate \
+		"$pkgdir"/etc/logrotate.d/apache2 || return 1
+	install -D -m644 "$srcdir"/apache2.confd \
+		"$pkgdir"/etc/conf.d/apache2 || return 1
+
+	install -d "$pkgdir"/var/www || return 1
+	install -d -m 2750 -g wheel "$pkgdir"/var/log/apache2 || return 1
+	ln -fs /var/log/apache2 "$pkgdir"/var/www/logs
+	ln -fs /run/apache2 "$pkgdir"/var/www/run
+	ln -fs /usr/lib/apache2 "$pkgdir"/var/www/modules
+	rm -fr "$pkgdir"/run
+
+	# verify all MPMs are built
+	# ref #2866
+	for i in prefork event worker; do
+		if ! [ -e "$pkgdir"/usr/lib/apache2/mod_mpm_$i.so ]; then
+			error "$i MPM was not built"
+			return 1
+		fi
+	done
+}
+
+_mv_conf() {
+	install -d "$subpkgdir"/etc/apache2/conf.d && \
+		mv "$pkgdir"/etc/apache2/conf.d/$1.conf \
+		"$subpkgdir"/etc/apache2/conf.d
+}
+
+# include the builddir and apxs in -dev package
+dev() {
+	local _mpm
+	local _file
+	default_dev
+	depends="$depends perl apr-util-dev"
+	arch="noarch"
+
+	# install apxs utility
+	install -d "$subpkgdir"/usr/bin
+	mv "$pkgdir"/usr/bin/apxs \
+		"$subpkgdir"/usr/bin/apxs || return 1
+
+
+	install -d "$subpkgdir"/usr/share/apache2
+	mv "$pkgdir"/usr/share/apache2/build \
+		"$subpkgdir"/usr/share/apache2/ || return 1
+}
+
+doc() {
+	default_doc && _mv_conf manual
+}
+
+_error() {
+	arch="noarch"
+	pkgdesc="Apache Multi Language Custom Error Documents"
+	install -d "$subpkgdir"/usr/share/apache2
+	mv "$pkgdir"/usr/share/apache2/error \
+		"$subpkgdir"/usr/share/apache2/ || return 1
+	_mv_conf multilang-errordoc
+}
+
+http2() {
+	pkgdesc="HTTP/2 transport layer for the Apache HTTP Server"
+	install -d "$subpkgdir"/usr/lib/apache2
+	mv "$pkgdir"/usr/lib/apache2/mod_http2.so \
+		"$subpkgdir"/usr/lib/apache2 || return 1
+	install -D -m644 "$srcdir"/http2.conf \
+		"$subpkgdir"/etc/apache2/conf.d/http2.conf || return 1
+}
+
+icons() {
+	arch="noarch"
+	pkgdesc="Apache Public Domain Icons"
+	install -d "$subpkgdir"/usr/share/apache2
+	mv "$pkgdir"/usr/share/apache2/icons \
+		"$subpkgdir"/usr/share/apache2/ || return 1
+	_mv_conf autoindex
+}
+
+utils() {
+	local _bin
+	pkgdesc="Apache utility programs for webservers"
+	install -d "$subpkgdir"/usr/sbin || return 1
+	mv "$pkgdir"/usr/bin "$subpkgdir"/usr/
+	for i in checkgid htcacheclean rotatelogs apachectl envvars*; do
+		mv "$pkgdir"/usr/sbin/$i "$subpkgdir"/usr/sbin/ || return 1
+	done
+}
+
+ssl() {
+	pkgdesc="SSL/TLS module for the Apache HTTP Server"
+	install="apache2-ssl.post-install"
+	depends="apache2 openssl"
+
+	install -d "$subpkgdir"/usr/lib/apache2 || return 1
+	mv "$pkgdir"/usr/lib/apache2/mod_ssl.so \
+		"$subpkgdir"/usr/lib/apache2/mod_ssl.so || return 1
+	_mv_conf ssl || return 1
+	install -d "$subpkgdir"/etc/ssl/apache2 || return 1
+}
+
+ldap() {
+	pkgdesc="LDAP authentication/authorization module for the Apache HTTP Server"
+	url="http://httpd.apache.org/docs/2.4/mod/mod_authnz_ldap.html"
+	depends="apache2 apr-util-ldap"
+
+	install -d "$subpkgdir"/usr/lib/apache2 || return 1
+	mv "$pkgdir"/usr/lib/apache2/mod_*ldap.so \
+		"$subpkgdir"/usr/lib/apache2/ || return 1
+	install -D -m644 "$srcdir"/ldap.conf \
+		"$subpkgdir"/etc/apache2/conf.d/ldap.conf || return 1
+}
+
+webdav() {
+	pkgdesc="WebDAV support for the Apache HTTP Server"
+	depends="apache2"
+	replaces="apache2"
+
+	install -d "$subpkgdir"/usr/lib/apache2 || return 1
+	mv "$pkgdir"/usr/lib/apache2/mod_dav*.so \
+		"$subpkgdir"/usr/lib/apache2/ || return 1
+	_mv_conf dav
+}
+
+proxy_html() {
+	pkgdesc="HTML and XML content filters for the Apache HTTP Server"
+	depends="apache2"
+	install -d "$subpkgdir"/usr/lib/apache2 || return 1
+	mv "$pkgdir"/usr/lib/apache2/mod_proxy_html.so \
+		"$pkgdir"/usr/lib/apache2/mod_xml2enc.so \
+		"$subpkgdir"/usr/lib/apache2/ || return 1
+	_mv_conf proxy-html
+}
+
+proxy() {
+	pkgdesc="Proxy modules for the Apache HTTP Server"
+	depends="apache2"
+	install -d "$subpkgdir"/usr/lib/apache2 || return 1
+	mv "$pkgdir"/usr/lib/apache2/mod_proxy*.so \
+		"$pkgdir"/usr/lib/apache2/mod_lbmethod_*.so \
+		"$subpkgdir"/usr/lib/apache2/ || return 1
+	install -D -m644 "$srcdir"/proxy.conf \
+		"$subpkgdir"/etc/apache2/conf.d/proxy.conf || return 1
+}
+
+_lua() {
+	pkgdesc="Lua support for the Apache HTTP server"
+	depends="apache2"
+	install -d "$subpkgdir"/usr/lib/apache2 || return 1
+	mv "$pkgdir"/usr/lib/apache2/mod_lua.so \
+		"$subpkgdir"/usr/lib/apache2/ || return 1
+	install -D -m644 "$srcdir"/lua.conf \
+		"$subpkgdir"/etc/apache2/conf.d/lua.conf || return 1
+}
+md5sums="04f19c60e810c028f5240a062668a688  httpd-2.4.23.tar.bz2
+257d2572921dd4506b0464441f88fab4  apache2.confd
+8519af87c57b50441866ad4216e4d663  apache2.logrotate
+11b2718d7a0550498aaddf41e940ad04  apache2.initd
+f1744ed54eed806d8523f177ee73d536  http2.conf
+b70fe826486043e3953cfe21f9e6fa16  ldap.conf
+96eddccfca1ec0349f844e2460cf655b  proxy.conf
+449a4aea60473ac4a16f025fca4463e3  lua.conf
+699aec01d2f7c5a67c10d0fe280780b7  alpine.layout
+56bbe9e4e83bbea1366dc107471ab64e  0001-httpd.conf-ServerRoot.patch
+3bd91de3d0063eafa0a07a950fb9041d  0002-httpd.conf-ServerTokens.patch
+29a501f82c81c00cd51cc8de91eee988  0003-httpd.conf-ServerSignature.patch
+968d320d0dead0eeb10a425e0c9e2e59  0004-httpd.conf-User-Group.patch
+88f9a51476a813b97510d2bdb4b2ccd4  0005-httpd.conf-ErrorLog-CustomLog-TransferLog.patch
+592ed15071a0d1b47315a06e395b03e2  0006-httpd-dav.conf-DavLockDB.patch
+0c3a6b8826876098fee8ccae5f732758  0007-httpd-ssl.conf-SSLSessionCache.patch
+42d0ebb0d5cdf66611eb45316d27bb44  0008-httpd-ssl.conf-SSLRandomSeed.patch
+52513e71652fc180458d367f4d8b866b  0009-httpd-ssl.conf-SSL-File.patch
+794a51cec6712b6c0a1359d1812d2c7c  0010-httpd-ssl.conf-SSL-CipherSuite.patch
+aa73ec65c4c67819f297e48da8d3fb8e  0011-httpd.conf-IncludeOptional.patch
+605536ff208f88ea97331b6b5d03278f  0012-httpd.conf-MIMEMagicFile.patch
+78f648c86a895107a9381374d5497f51  0013-httpd-.conf-IfModule.patch
+3c873b99a197a7fa1792bc7fa5b05233  0014-httpd-.conf-LoadModule.patch
+61489c5f174756e63bae95c5d85d0e46  CVE-2016-5387.patch"
+sha256sums="0c1694b2aad7765896faf92843452ee2555b9591ae10d4f19b245f2adfe85e58  httpd-2.4.23.tar.bz2
+6ca904ad65c1a4122d8ea4a3303ea8184429a4a4d7fb81defc30f3e184258c0a  apache2.confd
+8e2a8870d51796cf04cc7d8985c43e36afe9ae79e2d6765050a0e72c0de8dce7  apache2.logrotate
+8761faa68c2db7114b3f463f3b8ef1aec8f8373da9908d943cc765765914ab36  apache2.initd
+f7db734acf3a215fb9d89891a9a357b35ed59390b1c7ceadea511cb1979b4187  http2.conf
+25771023d7c921a13c792607d47bd716c92698b20af21c018f0922eaf79a9604  ldap.conf
+00c42b7806eaa73e732be9d9e92c3e841b20c6d91a9920be47f19db8aee3513e  proxy.conf
+edf701795137566c7cf4b9c0c95ecd5f8c58269f5600217a0a4d289d2bf15384  lua.conf
+c40668ae8384d0555488660b68eda16ad8ccb11fde16a8197d33bed739fed1e8  alpine.layout
+2e078ca7c99d78b0bf1d7eaa471d257f98af0aeb3d442e761552749981c8f503  0001-httpd.conf-ServerRoot.patch
+f9ad9b6fbdb6dd77b77e39410f061e4d155e83ac7943d4f3c8e783b75c4bca78  0002-httpd.conf-ServerTokens.patch
+8e38e5b285b5d7aabe3c03ce8d99555888de4a193f6ee52e725a40fc9380b42b  0003-httpd.conf-ServerSignature.patch
+6787eb526fe550c4bf4a507a23c33453e5e24731a88d662f230566f221c44cda  0004-httpd.conf-User-Group.patch
+262cab44115d07f0ee2397efd7a9ff8100ef9cbf6a94d856bee7de3831536a24  0005-httpd.conf-ErrorLog-CustomLog-TransferLog.patch
+0395f58e5f1d13e8ee8f88ea40862f54d1e94d361e43831337478af3ff39034d  0006-httpd-dav.conf-DavLockDB.patch
+38c27c17b9ed1b0440a69e594e5f45b52f59db193e03bbc9697bc784a9c5e308  0007-httpd-ssl.conf-SSLSessionCache.patch
+908c6a3f360e268caaf87f6d581443e7e0e3356b9a7be204d3b30423904dde81  0008-httpd-ssl.conf-SSLRandomSeed.patch
+d5129c7bd958a9a801527a3a07ad45a390fb23bc1754edf9274dbf32e68568ee  0009-httpd-ssl.conf-SSL-File.patch
+f22abd948065649d9972be320a1feb855b5807ca9f45af3ad354b9560cb257d1  0010-httpd-ssl.conf-SSL-CipherSuite.patch
+9ecd79e4a084d876c56000ccc2fa88463fb57617b575fe4f8104c099715c691b  0011-httpd.conf-IncludeOptional.patch
+5bad32417abc9fdf3e430aabd1ac8d13d90304911d6bd76515896df0aaa3e8d7  0012-httpd.conf-MIMEMagicFile.patch
+9603bf79c7eab05e635ee7c9b2ecc67c49146f955b59852a88f2c618bd489a78  0013-httpd-.conf-IfModule.patch
+34d0202635660c961ee5186a4950e2af714b27bbd4aef23901c1f05a5e6c6fcd  0014-httpd-.conf-LoadModule.patch
+c38bf5061a7c8d2da010db57ecf36a8c29739d34a04f55c66405a2e9fc319cd8  CVE-2016-5387.patch"
+sha512sums="c520de5be748c0a785ef0dc77102749eb4f47e224968b8d4bed2ae644faa0964623a0e960b64486a0888446790d050b52a6ae34fe61717fab95b37384b4825b1  httpd-2.4.23.tar.bz2
+8e62b101f90c67babe864bcb74f711656180b011df3fd4b541dc766b980b72aa409e86debf3559a55be359471c1cad81b8779ef3a55add8d368229fc7e9544fc  apache2.confd
+18e8859c7d99c4483792a5fd20127873aad8fa396cafbdb6f2c4253451ffe7a1093a3859ce719375e0769739c93704c88897bd087c63e1ef585e26dcc1f5dd9b  apache2.logrotate
+81a2d2a297d8049ba1b021b879ec863767149e056d9bdb2ac8acf63572b254935ec96c2e1580eba86639ea56433eec5c41341e4f1501f9072745dccdb3602701  apache2.initd
+86f693b3c4e4d8d9639b6deae13c7f26e2761cad7714dd61609c8db6d495dc6e88a7421a1086486adf68c374270db9f709626519f73a64019ae958692bae030c  http2.conf
+fbdc28ea4b94af91640794945ac4e1f45e4200e54d5bdf64c0c03fc8bdb589e444cc4f7dd0b70b696c0e5e033c8489b8bd8f8fd090906c4379651c7d032c2449  ldap.conf
+aabbe171219f15efe47f8e972fc1a43f98b48977aae91b597b65bb447027992bf81757bde68b26a67e5e3b9f2e748d94b3c85d5c07433627b6048d60a51d400b  proxy.conf
+f2950005ac0d8c7a5e34958f1274c9ed0f5f634a5bc766e12834917937df9db901c5fc2460da70e1a62f17440d4719163cd4213496dbf579c80a789b8e18f65c  lua.conf
+177c58d049fc4476fd9b9b36b67725145777c84cf81948105c9314cb09312dff6c1931fe21aaa243597abaefded6c6dfd80d83839e45a23950b50de615d73b06  alpine.layout
+b55051f1358fb957cb24ea5d7cf6106822935c5fe3d1f4bb071d4caff5daa46c31c4fc81ec1f2ce0335a634e8b7545f2265c3d28bea3b0799b9ff589ba36c24a  0001-httpd.conf-ServerRoot.patch
+948299dd3b5b004276394a4ce94005a011cfe14e032e7cdce060bf0f6123835020419226cc0fe78cbefba996c0c2eebd1b8d713d2f1b424e0e6f58b1e589bc3f  0002-httpd.conf-ServerTokens.patch
+360d67fae5882f460509bfe3a295055602480902aa135f914cfd3c6d16c43fa92e77ef5de0360b2eab11ca0d0ad6bd46bf093a156a64718696635a6c3d328ad3  0003-httpd.conf-ServerSignature.patch
+2bf81ded68ccca5d893233bede8cd002d05b7e26fe1a6d341c41a5e439e16c816ffdcb03fd093b45ff0ea1b905f423420e45b07b9da91181ac73fb533e1b68c1  0004-httpd.conf-User-Group.patch
+9aa4bc57702c2b4adb91885558504318ebc5d4129aea259bff08d19d8350c82e308c801db77f1dadbbeae4bf284a7939c2f16a8fd26798b71e8510985540c1e4  0005-httpd.conf-ErrorLog-CustomLog-TransferLog.patch
+238f6b3572f6a39ed778aab33b7adc5023fb8d82cbea1af21b16587aac2c9056d025608c20232e3017531513b4b49e4272ab59c82a7a39b17291c93256037387  0006-httpd-dav.conf-DavLockDB.patch
+5c32f20f883055f47e796b9fd5dcea5e794c7a5375712e384a7093ca38629259beda376d0ba2c78c44329f75e2c75fda987bc38ff22669a8421a7825bdef78b7  0007-httpd-ssl.conf-SSLSessionCache.patch
+9eca9eca008af801adc067eb0ecfe19cff7e77e7e675cd005d3ac1d551c638bb6ea5dd9b30a019db9c650fba53ab6ce88202118361e53f018283f6794d3f09d3  0008-httpd-ssl.conf-SSLRandomSeed.patch
+377c89510dc165dfb88922aeaf923aa1efd69e7cfd10cb6f8b1e1f015865187f287c0a5090f31f76137de8b9973fcbf5bd17f7003fc275c87a6bf3cf32758c33  0009-httpd-ssl.conf-SSL-File.patch
+e151a8ebb23b1a3a92ea9a8b83b6bf64c950ec8ded8d514df8f16f074c5f712de7c44cb42190ca15a2010bac2c4ff57f26947e87625d40f7791ec1e77cf88cc7  0010-httpd-ssl.conf-SSL-CipherSuite.patch
+fc3352b50bee11e7560594398948a1af0279d339e891915e38766c9c0f930cc01f207e438afe9a43329b6d23fe438939666309e8ad77938dbe8dc784aaae4113  0011-httpd.conf-IncludeOptional.patch
+da3a99ccf54c8d4adc633cceb3e520e48b47e868e8f1be33c81027ce3173401c8b9b79af4f75c73c94f77a50452219a4d23774b03a74f6271a677ec271396ada  0012-httpd.conf-MIMEMagicFile.patch
+564866cadebd957eb9b23624286deb8cadb0ebeda0e3e80ec2cd8912731c8273f5ef5fa9f2d8295accb304da40c850772a854eb0c76c3aa08bb93b059c730882  0013-httpd-.conf-IfModule.patch
+3742b8ed06cfd081a02c171b5ddf42652d2848fd520e0ff1a4799fce90300e70ab8edbbecc7111a1083133077a57703a631879143777565e6918099a873d4aa0  0014-httpd-.conf-LoadModule.patch
+ebfcac5e4bc12a64d4d7e723d362cfc4912a6369ddd265a06dee95af1d5dbf8dd4bfe87ce227661afb386e19dc738e475e11aebd0ddcb5f827c14fe7c66d998c  CVE-2016-5387.patch"

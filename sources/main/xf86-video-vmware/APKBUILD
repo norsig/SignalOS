@@ -1,0 +1,47 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=xf86-video-vmware
+pkgver=13.1.0
+pkgrel=2
+pkgdesc="X.org VMWare video driver"
+url="http://xorg.freedesktop.org/"
+arch="x86 x86_64"
+license="custom"
+subpackages="$pkgname-doc"
+depends=
+makedepends="xorg-server-dev videoproto renderproto xproto libdrm-dev
+	fontsproto xf86dgaproto xineramaproto randrproto xextproto libxi-dev"
+
+source="http://xorg.freedesktop.org/releases/individual/driver/$pkgname-$pkgver.tar.bz2
+	"
+
+_builddir="$srcdir"/xf86-video-vmware-$pkgver
+prepare() {
+	cd "$_builddir"
+	update_config_sub || return 1
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	export LDFLAGS="$LDFLAGS -Wl,-z,lazy"
+
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$srcdir"/$pkgname-$pkgver
+	make DESTDIR="$pkgdir" install || return 1
+	install -Dm644 COPYING "$pkgdir"/usr/share/licenses/$pkgname/COPYING
+}
+md5sums="0cba22fed4cb639d5c4276f7892c543d  xf86-video-vmware-13.1.0.tar.bz2"
+sha256sums="3c1d244e4b1b77e92126957965cdc9fb82de4c215c0706a3a8aaff6939e4a0cc  xf86-video-vmware-13.1.0.tar.bz2"
+sha512sums="43d6a15e40896c793e49a1670b937e417271baff15b737b6b8cd3845bb7d2fc6354bf53cb40350caf0e7aac1e005a0fb2c9c80ce25690678b79e8e48f05f1de0  xf86-video-vmware-13.1.0.tar.bz2"

@@ -1,0 +1,40 @@
+# Contributor: Łukasz Jendrysik <scadu@yandex.com>
+# Contributor: Carlo Landmeter <clandmeter@gmail.com>
+# Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=libass
+pkgver=0.13.2
+pkgrel=0
+pkgdesc="A portable library for SSA/ASS subtitles rendering"
+url="https://github.com/libass/libass"
+arch="all"
+license="ISC"
+depends=""
+depends_dev="enca-dev fontconfig-dev fribidi-dev freetype-dev"
+makedepends="$depends_dev"
+subpackages="$pkgname-dev"
+source="http://github.com/$pkgname/$pkgname/releases/download/$pkgver/$pkgname-$pkgver.tar.xz"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--localstatedir=/var \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install
+}
+
+md5sums="1c8cbd5751aeb192bda04a65d0464fd9  libass-0.13.2.tar.xz"
+sha256sums="d698d0a6adca7c36c5a86b540d67b05bfd36cebc3c351ab7646497c43fe1face  libass-0.13.2.tar.xz"
+sha512sums="71d495c02ea478b8632c177cef8605d23377e2da2c56dd3a1fa59f9a2d01cc642d4d9dc383083ef1dee8ccf2a6e6f25a4ad9bb7dff3618e7646161731b7312c7  libass-0.13.2.tar.xz"

@@ -1,0 +1,47 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=gdl
+pkgver=3.20.0
+pkgrel=0
+pkgdesc="Gnome Devtool Libraries"
+url="http://www.gnome.org/"
+arch="all"
+license="GPL"
+makedepends="gtk+3.0-dev libxml2-dev intltool"
+subpackages="$pkgname-dev $pkgname-doc $pkgname-lang"
+source="http://ftp.gnome.org/pub/GNOME/sources/$pkgname/${pkgver%.*}/$pkgname-$pkgver.tar.xz
+	localedir.patch"
+
+_builddir="$srcdir/$pkgname-$pkgver"
+
+prepare() {
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--localstatedir=/var \
+		--disable-static \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+md5sums="32dcfb6c037672676f928010c2e8147a  gdl-3.20.0.tar.xz
+0d9a3666263a57c43574b89b638a6503  localedir.patch"
+sha256sums="53d3a3bb9b9be25b3a40c644fdbbb57a5a63ee1f5f839c2266d1cd9779360e8b  gdl-3.20.0.tar.xz
+05bfe0446d29ae7dd443600a58d172d1bb4f3d1d24886e785dfcc108c2d0e8ce  localedir.patch"
+sha512sums="94f04a6a7348a1649a846cbbb834fd297de3088b5ec31f77d4681c7b1c92cf5186d51790632b6715a7181e931e746246ff35e46aea0a5d30d947a7b17d57ae30  gdl-3.20.0.tar.xz
+4e1138f1ec2e4f2d1eb85df653542195aa9caf512c759c54f6b275750a819d9684f590e0c8c01203050c1b3901f57ac6e113649f05ddc09b4d782307fd4e58d6  localedir.patch"

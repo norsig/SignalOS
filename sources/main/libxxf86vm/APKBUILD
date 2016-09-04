@@ -1,0 +1,43 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=libxxf86vm
+pkgver=1.1.4
+pkgrel=0
+pkgdesc="X11 XFree86 video mode extension library"
+url="http://xorg.freedesktop.org/"
+arch="all"
+license="custom"
+subpackages="$pkgname-dev $pkgname-doc"
+depends=
+depends_dev="xf86vidmodeproto libx11-dev libxext-dev"
+makedepends="$depends_dev"
+source="http://xorg.freedesktop.org/releases/individual/lib/libXxf86vm-$pkgver.tar.bz2
+	"
+
+_builddir="$srcdir"/libXxf86vm-$pkgver
+prepare() {
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+	install -Dm644 COPYING "$pkgdir"/usr/share/licenses/$pkgname/COPYING
+}
+md5sums="298b8fff82df17304dfdb5fe4066fe3a  libXxf86vm-1.1.4.tar.bz2"
+sha256sums="afee27f93c5f31c0ad582852c0fb36d50e4de7cd585fcf655e278a633d85cd57  libXxf86vm-1.1.4.tar.bz2"
+sha512sums="c5f92d86e143db02ebb36bcd25618acaa2cb2831f5a23800a06dd431cd73b6702d95de8fe7407ce626336bf614c288d5256f4d87ea7781fad2ab6c517cbf09e0  libXxf86vm-1.1.4.tar.bz2"

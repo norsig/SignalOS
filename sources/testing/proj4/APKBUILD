@@ -1,0 +1,36 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=proj4
+pkgver=4.9.1
+pkgrel=0
+pkgdesc="PROJ.4 - Cartographic Projections Library"
+url="http://trac.osgeo.org/proj/"
+arch="all"
+license="MIT"
+options=""
+depends=""
+makedepends=""
+subpackages="$pkgname-doc $pkgname-dev"
+source="http://download.osgeo.org/proj/proj-$pkgver.tar.gz
+	"
+
+builddir="$srcdir"/proj-$pkgver
+build () {
+	cd "$builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--without-jni \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$builddir"
+	mkdir -p $pkgdir/usr/bin
+	make DESTDIR="$pkgdir" install
+}
+
+md5sums="3cbb2a964fd19a496f5f4265a717d31c  proj-4.9.1.tar.gz"
+sha256sums="fca0388f3f8bc5a1a803d2f6ff30017532367992b30cf144f2d39be88f36c319  proj-4.9.1.tar.gz"
+sha512sums="6ad49afe53cc758df7450fffd335b2829fb4bc73e717fdf1932b286dea3b9fe5193014aed5cfdada9a1e256b2c5901f1e2a0e388a920d43b8ffa5074918af4cf  proj-4.9.1.tar.gz"

@@ -1,0 +1,48 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=libnotify
+pkgver=0.7.6
+pkgrel=1
+pkgdesc="Desktop notification library"
+url="http://library.gnome.org/devel/notification-spec/"
+arch="all"
+license="LGPL"
+subpackages="$pkgname-dev $pkgname-doc"
+depends=
+depends_dev="gdk-pixbuf-dev glib-dev dbus-dev"
+makedepends="$depends_dev gtk+3.0-dev autoconf automake"
+source="http://ftp.gnome.org/pub/GNOME/sources/${pkgname}/${pkgver%.*}/${pkgname}-${pkgver}.tar.xz
+	skip-tests.patch"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+
+prepare() {
+        local i
+        cd "$_builddir"
+        for i in $source; do
+                case $i in
+                *.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+                esac
+        done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--disable-static \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+md5sums="a4997019d08f46f3bf57b78e6f795a59  libnotify-0.7.6.tar.xz
+3b1827cf68f5bc2342486926a492eebf  skip-tests.patch"
+sha256sums="0ef61ca400d30e28217979bfa0e73a7406b19c32dd76150654ec5b2bdf47d837  libnotify-0.7.6.tar.xz
+0b8fcd6fcb3c5127dfa0e6ca83b6dc10f4c30aa782d7fae6c26870d2f175ff9a  skip-tests.patch"
+sha512sums="5d656ee7ee5caeb95aec4adb973795dc72fc620cd36b9fe3d4f910951945bd5df70ee1c422cd6aca9c38a9ba2760562e479fc8fb9269449924a5b24d762d03df  libnotify-0.7.6.tar.xz
+3fd0c6d1eeadfea71ea4d45ef45eb6a51075c4687640234c7bad2829880679766a1885dc8aef73bdf2b24a004e250f0c2a67bf285ca6bb545f6d085768a2f373  skip-tests.patch"

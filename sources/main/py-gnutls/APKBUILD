@@ -1,0 +1,30 @@
+# Contributor: Francesco Colista <francesco.colista@gmail.com>
+# Maintainer: Francesco Colista <francesco.colista@gmail.com>
+pkgname=py-gnutls
+_pkgname=python-gnutls
+pkgver=2.0.1
+pkgrel=0
+pkgdesc="Python wrapper for the GNUTLS library"
+url="http://pypi.python.org/pypi/python-gnutls"
+arch="all"
+license="PSF"
+depends=""
+makedepends="python-dev gnutls-dev"
+install=""
+subpackages=""
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz"
+
+_buildroot=${srcdir}/${_pkgname}-${pkgver}
+build() {
+	cd ${_buildroot}
+	python setup.py build || return 1
+}
+
+package() {
+	cd ${_buildroot}
+	python setup.py install --root="$pkgdir" || return 1
+}
+
+md5sums="adba310851a15d19ff29355385c6f74f  python-gnutls-2.0.1.tar.gz"
+sha256sums="d8fb368c6a4dd58bc6cd5e61d4a12d119c4506fd344a371b3429b3ac2623b9ac  python-gnutls-2.0.1.tar.gz"
+sha512sums="6dca8ba9e98e76add30502825f5711e3bc6f22b2a1e28416a3c1acacec41eb45e4e2f63c0185fa10f8e518df41f1093ba33ab33a5f69dd25300e17db1022b3df  python-gnutls-2.0.1.tar.gz"

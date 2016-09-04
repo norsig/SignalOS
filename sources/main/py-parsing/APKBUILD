@@ -1,0 +1,40 @@
+# Contributor: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=py-parsing
+pkgver=2.1.1
+pkgrel=0
+pkgdesc="An object-oriented approach to text processing"
+url="http://pyparsing.wikispaces.com/"
+arch="noarch"
+license="MIT"
+depends="python"
+depends_dev=""
+makedepends="python-dev py-setuptools"
+install=""
+subpackages=""
+source="http://downloads.sourceforge.net/pyparsing/pyparsing-$pkgver.tar.gz"
+
+_builddir="$srcdir"/pyparsing-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	python setup.py build || return 1
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py install --prefix=/usr --root="$pkgdir" || return 1
+}
+
+md5sums="5ce9096d94f553e2bc1fd366fba65558  pyparsing-2.1.1.tar.gz"
+sha256sums="9bae5cd4cbee6da0d7d8d9a1647f5253a3b89652e707647eaf1961f4932ae6c6  pyparsing-2.1.1.tar.gz"
+sha512sums="4a725f7a5ff5ea805b18e9c8f342733289da8147bb8c7f905bbdca5553d06b818d055c2b3ac61856b10d29f74ac0d846d0ca95e506b66939ba774ed43f1f7aee  pyparsing-2.1.1.tar.gz"

@@ -1,0 +1,38 @@
+# Maintainer: Jeff Bilyk <jbilyk@gmail.com>
+_php=php5
+pkgname=cacti
+pkgver=0.8.8h
+pkgrel=0
+pkgdesc="Network monitoring tool based on RRDtool"
+url="http://www.cacti.net"
+arch="noarch"
+license="GPL2+"
+depends="$_php ${_php}-mysql ${_php}-snmp rrdtool net-snmp ${_php}-sockets
+	${_php}-xml ${_php}-gd"
+makedepends=""
+source="http://www.cacti.net/downloads/$pkgname-$pkgver.tar.gz
+	"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+prepare() {
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	return 0
+}
+
+package() {
+	mkdir -p "$pkgdir"/usr/share/webapps/cacti
+	mv "$srcdir"/$pkgname-$pkgver/* "$pkgdir"/usr/share/webapps/cacti/ || return 1
+
+}
+md5sums="e5a2eb9e1b187a92284f46e7d4cd6505  cacti-0.8.8h.tar.gz"
+sha256sums="0673bd9513dad381c8bbb9133c721a32bc6422dc91c5a81de16e3cd32e4d0600  cacti-0.8.8h.tar.gz"
+sha512sums="11bb0682a7220af5581f42579cf9c38d94aae202425ce15b824849684b1a6778d6f14e6a62ec94c608b7ba06562a825be7fd6d812d0800daa5eb56e640ac1c5f  cacti-0.8.8h.tar.gz"

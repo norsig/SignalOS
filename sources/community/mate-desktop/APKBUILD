@@ -1,0 +1,47 @@
+# Contributor: Alan Lacerda <alacerda@alpinelinux.org>
+# Maintainer: Alan Lacerda <alacerda@alpinelinux.org>
+pkgname=mate-desktop
+pkgver=1.14.1
+pkgrel=0
+pkgdesc="The MATE Desktop Environment"
+url="http://wiki.mate-desktop.org/mate-desktop"
+arch="all"
+license="GPL2"
+depends="mate-common yelp-tools"
+depends_dev=""
+makedepends="$depends_dev itstool intltool dconf-dev gtk+2.0-dev libxrandr-dev
+	libxml2-utils"
+install=""
+subpackages="$pkgname-lang $pkgname-dev $pkgname-doc"
+source="http://pub.mate-desktop.org/releases/${pkgver%.*}/$pkgname-$pkgver.tar.xz"
+
+_builddir="$srcdir/$pkgname-$pkgver"
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--sysconfdir=/etc \
+		--prefix=/usr \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="${pkgdir}" install || return 1
+}
+
+md5sums="3d8d55e228b4ab82cf33004e314820e0  mate-desktop-1.14.1.tar.xz"
+sha256sums="97b5067c3b9a0b96494cf189dc94e64ac852cd21cddc27961e7b744f550d5786  mate-desktop-1.14.1.tar.xz"
+sha512sums="b8d9688bfbea83d1264bce32be72fcb629b007e073553af24a9a79895baa29db3137cf6eed6a1bdf1a0b16ba3e02de892e85cbcfa62b84773d02fce71311496d  mate-desktop-1.14.1.tar.xz"

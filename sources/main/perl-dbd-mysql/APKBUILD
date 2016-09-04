@@ -1,0 +1,36 @@
+# Contributor: Łukasz Jendrysik <scadu@yandex.com>
+# Contributor: Jeff Bilyk <jbilyk at gmail>
+# Maintainer: Leonardo Arena <rnalrd@alpinelinux.org>
+pkgname=perl-dbd-mysql
+_realpkgname=DBD-mysql
+pkgver=4.033
+pkgrel=1
+pkgdesc="Perl CPAN DBD::Mysql module"
+url="http://search.cpan.org/~capttofu/DBD-mysql/"
+arch="all"
+license="GPL PerlArtistic"
+depends="perl perl-dbi"
+makedepends="perl perl-dev mariadb-dev zlib-dev"
+source="http://search.cpan.org/CPAN/authors/id/C/CA/CAPTTOFU/DBD-mysql-$pkgver.tar.gz"
+
+_builddir="$srcdir"/${_realpkgname}-$pkgver
+
+prepare() {
+	return 0
+}
+
+build() {
+	cd "$_builddir"
+	PERL_MM_USE_DEFAULT=1 perl Makefile.PL INSTALLDIRS=vendor || return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+	find "$pkgdir" -name perllocal.pod -delete
+}
+
+md5sums="7bbaf2ce32e137d0e6045402c550d86c  DBD-mysql-4.033.tar.gz"
+sha256sums="cc98bbcc33581fbc55b42ae681c6946b70a26f549b3c64466740dfe9a7eac91c  DBD-mysql-4.033.tar.gz"
+sha512sums="c323ddcbaa84acfa1dbe3121e9237d99b1b0d014ae7f1786fae550a6640b7616a4fb773e43079f21aefbbe4932c17c840b62ee4cb066e15d3de3a199115b5b7c  DBD-mysql-4.033.tar.gz"

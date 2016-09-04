@@ -1,0 +1,124 @@
+# Contributor: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=znc
+pkgver=1.6.3
+pkgrel=3
+pkgdesc="An advanced IRC bouncer"
+url="http://znc.in"
+arch="all"
+license="ASL 2.0"
+depends=""
+depends_dev=""
+makedepends="perl-dev openssl-dev cyrus-sasl-dev python-dev c-ares-dev swig
+	gettext-dev tcl-dev autoconf automake python3-dev"
+install="$pkgname.pre-install"
+pkgusers="$pkgname"
+subpackages="$pkgname-dev $pkgname-doc $pkgname-extra $pkgname-modtcl
+			$pkgname-modperl  $pkgname-modpython"
+source="http://znc.in/releases/znc-$pkgver.tar.gz
+	$pkgname.initd
+	$pkgname.confd"
+
+_builddir="$srcdir"/znc-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	export CFLAGS="$CFLAGS -D_GNU_SOURCE"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--localstatedir=/var \
+		--enable-perl \
+		--enable-tcl \
+		--enable-python \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+        install -D -m755 "$srcdir"/$pkgname.initd \
+		"$pkgdir"/etc/init.d/$pkgname || return 1
+	install -D -m644 "$srcdir"/$pkgname.confd \
+		"$pkgdir"/etc/conf.d/$pkgname || return 1
+	install -d -o $pkgname $pkgdir/var/lib/znc || return 1
+}
+
+_mv_to_sub() {
+	local i
+	for i in "$@"; do
+		mkdir -p "$subpkgdir"/${i%/*}
+		mv "$pkgdir"/$i "$subpkgdir"/$i || return 1
+	done
+}
+
+_mv_mod() {
+	local i
+	for i in "$@"; do
+		_mv_to_sub usr/lib/znc/$i || return 1
+	done
+}
+
+dev() {
+	default_dev
+	_mv_to_sub usr/bin/znc-buildmod
+}
+
+extra() {
+	pkgdesc="Extra modules for ZNC"
+	_mv_mod \
+		autovoice.so \
+		block_motd.so \
+		clearbufferonmsg.so \
+		ctcpflood.so \
+		flooddetach.so \
+		imapauth.so \
+		listsockets.so \
+		log.so \
+		notify_connect.so \
+		send_raw.so \
+		shell.so
+}
+
+modtcl() {
+	pkgdesc="TCL module for ZNC"
+	depends="znc"
+	_mv_mod modtcl.so
+	_mv_to_sub usr/share/znc/modtcl
+}
+
+modperl() {
+	pkgdesc="Perl module for ZNC"
+	depends="znc"
+	_mv_mod modperl modperl.so
+}
+
+modpython() {
+	pkgdesc="Python modules for ZNC"
+	depends="znc"
+	_mv_mod modpython modpython.so
+}
+
+md5sums="0dad0307e2faea26b9e304e308f7ec63  znc-1.6.3.tar.gz
+0170c261efe6da389bf637b00dfcb984  znc.initd
+1817e134ec3fa6ec05d36d4995a5aaa5  znc.confd"
+sha256sums="631c46de76fe601a41ef7676bc974958e9a302b72b25fc92b4a603a25d89b827  znc-1.6.3.tar.gz
+fa67ed45506863f5c0d7a73a4ab2c7b199a8eb02a2b201dbb64bd8bace00bbf2  znc.initd
+be3155e79e6ed13be88fbf9d99f6889b3ee8425837120c448c827b8302672063  znc.confd"
+sha512sums="777279b6c973310b4e78a0472bd1e355c2adf3e4fbe9ebedde3dd4706e5c0b208d4330eb2318a8d9e0d7d7146bee0a4a428cbe5a3f230c8f6aa692a477e86e2b  znc-1.6.3.tar.gz
+3287affd90f0048a7e790179d97ac9964498cc87f833afb97c6298abfbdbdf1131edd1211b3b64290a862ae4a768f63c346c274a18664a2e22e2815632a726c2  znc.initd
+352f18d64cbfbd5970c859f2ae2290c0ddafcbd8f1bb5d74f33976bc8388f65a75f8a9a73a093fbac12f2d243d4bcf74380bbb3aaab8d68f7bf4eab7ce3bea46  znc.confd"

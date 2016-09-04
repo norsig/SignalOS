@@ -1,0 +1,41 @@
+# Contributor: Fabian Affolter <fabian@affolter-engineering.ch>
+# Maintainer: Fabian Affolter <fabian@affolter-engineering.ch>
+pkgname=py-sphinxcontrib-actdiag
+_pkgname=sphinxcontrib-actdiag
+pkgver=0.8.1
+pkgrel=0
+pkgdesc="Sphinx "actdiag" extension"
+url="https://pypi.python.org/pypi/sphinxcontrib-actdiag"
+arch="noarch"
+license="BSD"
+depends="python py-sphinx py-actdiag"
+depends_dev=""
+makedepends="python-dev py-setuptools"
+install=""
+subpackages=""
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz"
+
+_builddir="$srcdir"/$_pkgname-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	python setup.py build || return 1
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py install --prefix=/usr --root="$pkgdir" || return 1
+}
+
+md5sums="651e6ca4e066f38cff80746fb727a105  sphinxcontrib-actdiag-0.8.1.tar.gz"
+sha256sums="e48677d2d3089235c9df93bae0ad0aa567855a183f07dce8d1b5c69c05aa3301  sphinxcontrib-actdiag-0.8.1.tar.gz"
+sha512sums="9bc98df11d0a67da4b4e254af34e8d3af66b6c016bc70539c74f39cf2822c1991a9842d3f9ac8f789ac324a8889346d58f9277b5becd34902942efe1ba32000d  sphinxcontrib-actdiag-0.8.1.tar.gz"

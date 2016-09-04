@@ -1,0 +1,55 @@
+# Contributor: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=libmtp
+pkgver=1.1.12
+pkgrel=0
+pkgdesc="A software library for MTP media players"
+url="http://libmtp.sourceforge.net/"
+arch="all"
+license="LGPL2+"
+depends=""
+depends_dev="libusb-compat-dev"
+makedepends="$depends_dev eudev-dev"
+install=""
+subpackages="$pkgname-dev $pkgname-examples"
+source="http://download.sourceforge.net/libmtp/$pkgname-$pkgver.tar.gz"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--localstatedir=/var \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+examples() {
+	pkgdesc="Example programs for libmtp"
+	mkdir -p "$subpkgdir"/usr
+	mv "$pkgdir"/usr/bin "$subpkgdir"/usr/
+}
+
+md5sums="0c59559ea253d02170511ecf6b05d577  libmtp-1.1.12.tar.gz"
+sha256sums="cdf59e816c6cda3e908a876c7fb42943f40b85669aea0029a1ca431c89afa1a0  libmtp-1.1.12.tar.gz"
+sha512sums="2fff8f6653aa1fa6d7a545fc4f0ae8cb3e54fdb4486a0f065b733ffb5c33f994f66067a697ffe52fe65fb39ffe2bacc418543f84e504e18f443e3c563a116c4f  libmtp-1.1.12.tar.gz"

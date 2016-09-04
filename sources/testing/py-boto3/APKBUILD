@@ -1,0 +1,39 @@
+# Maintainer: Valery Kartel <valery.kartel@gmail.com>
+# Contributor: Valery Kartel <valery.kartel@gmail.com>
+pkgname=py-boto3
+_pkgname=boto3
+pkgver=1.3.1
+pkgrel=0
+pkgdesc="AWS SDK for Python (Boto3)"
+url="http://aws.amazon.com/sdk-for-python/"
+arch="noarch"
+license="ASL 2.0"
+depends="python py-botocore py-jmespath"
+depends_dev=
+makedepends="python-dev py-setuptools"
+install=
+#subpackages="$pkgname-doc $pkgname-tools"
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz"
+
+_builddir="$srcdir"/$_pkgname-$pkgver
+
+build() {
+	cd "$_builddir"
+	python setup.py build || return 1
+}
+
+package() {
+	cd "$_builddir"
+	python setup.py install --prefix=/usr --root="$pkgdir" || return 1
+}
+
+tools() {
+	pkgdesc="Command line tools to deal with Amazon Web Services"
+	depends="$pkgname"
+	mkdir -p "$subpkgdir"/usr
+	mv "$pkgdir"/usr/bin "$subpkgdir"/usr
+}
+
+md5sums="e6be09a90230390640873979702dd6da  boto3-1.3.1.tar.gz"
+sha256sums="6e4d33f2935580278af84b8d63760306d9586a5144780e4ba37737a1f2bdc56f  boto3-1.3.1.tar.gz"
+sha512sums="325a0103120a4622e833db1e3b6de477ef465a070b4a68d82e4194186b866cccfecc09f8c6633908633e114ecad243f37b26d51beb93740efebb4290a4640ba8  boto3-1.3.1.tar.gz"

@@ -1,0 +1,70 @@
+# Contributor: Łukasz Jendrysik <scadu@yandex.com>
+# Contributor: Leonardo Arena <rnarld@alpinelinux.org>
+# Maintainer:
+pkgname=lua-dbi
+_realname=luadbi
+pkgver=0.5
+pkgrel=6
+pkgdesc="A database interface library for Lua"
+url="http://code.google.com/p/luadbi"
+arch="all"
+license="GPL"
+depends=""
+makedepends="lua-dev mariadb-dev postgresql-dev sqlite-dev"
+install=""
+subpackages="$pkgname-mysql $pkgname-postgresql $pkgname-sqlite"
+source="http://luadbi.googlecode.com/files/$_realname.$pkgver.tar.gz
+	lua-dbi-0.5-sync-hg-47382fea7a9c.patch"
+
+_builddir="$srcdir"
+
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	# install -d "$pkgdir"/usr/lib/lua/5.1
+	install -D -m755 "$srcdir"/DBI.lua "$pkgdir"/usr/share/lua/5.1/DBI.lua  || return 1
+}
+
+_mv_backend() {
+	install -d "$subpkgdir"/usr/lib/lua/5.1
+	mv "$srcdir"/dbd${1}.so "$subpkgdir"/usr/lib/lua/5.1
+}
+
+sqlite() {
+	pkgdesc="lua-dbi SQLite backend"
+	depends="lua-dbi"
+	_mv_backend sqlite3
+}
+
+mysql() {
+	pkgdesc="lua-dbi MySQL backend"
+	depends="lua-dbi"
+	_mv_backend mysql
+}
+
+postgresql() {
+	pkgdesc="lua-dbi PostgreSQL backend"
+	depends="lua-dbi"
+	_mv_backend postgresql
+}
+
+md5sums="ede2b003aadddc151aac87050c3d926e  luadbi.0.5.tar.gz
+a1359b3a96a21a010310b505c667f8aa  lua-dbi-0.5-sync-hg-47382fea7a9c.patch"
+sha256sums="49116458dd80052536bf5d7e2b2a1f5a0fa42a671ce77f1cb7355ef7faeb331e  luadbi.0.5.tar.gz
+c6cd0587d789fa9af4687dac471e8b05aea63022224b0da482ec9dcfc7998dd2  lua-dbi-0.5-sync-hg-47382fea7a9c.patch"
+sha512sums="4ed641e113e90acc8a4f6b3b2d0f5d5044c0fbbef3b2fdfb84d15e17115e45c553a33b19bfb165e5af11a2adce501d66859963e3363d3ab1c6a39b0b2ae92e62  luadbi.0.5.tar.gz
+e4f5dc5a75204e7fc1221b4322f1044889a417c6bf7f01bfc7249756a3739931423c66282b560f223f4ea8ef7e1d8311fbe5dfa281d0102a835c436ace7470e4  lua-dbi-0.5-sync-hg-47382fea7a9c.patch"

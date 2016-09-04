@@ -1,0 +1,54 @@
+# Contributor: Carlo Landmeter <clandmeter@gmail.com>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=libva-intel-driver
+pkgver=1.7.1
+pkgrel=0
+pkgdesc="VA-API implementation for Intel G45 chipsets and Intel HD Graphics for Intel Core processor family"
+url="http://freedesktop.org/wiki/Software/vaapi"
+arch="x86 x86_64"
+license="MIT"
+depends=""
+depends_dev="libdrm-dev libva-dev"
+makedepends="$depends_dev autoconf automake libtool"
+install=""
+subpackages=""
+install_if="libva xf86-video-intel"
+source="http://www.freedesktop.org/software/vaapi/releases/libva-intel-driver/libva-intel-driver-$pkgver.tar.bz2"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+	# we need to regen the configure script which will unconditionally
+	# depend on wayland scanner otherwise
+	libtoolize --force && aclocal -I m4 && autoconf \
+		&& automake --add-missing
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--enable-x11 \
+		--disable-wayland \
+		--disable-static \
+		--enable-shared \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+md5sums="91368b4647a628e8b1fe24438dd51598  libva-intel-driver-1.7.1.tar.bz2"
+sha256sums="1ed7717a4058030d381a07c1afe53781ccdcc8643edbc02e769f5b72a316dcb5  libva-intel-driver-1.7.1.tar.bz2"
+sha512sums="dab2a500bdaf1d3b16ff89e775280abd49adec4fc9fbe062b3fe8d1c20b57913d54824f0ee9ad6da848152518c10da23ea68553bb25ec15865ded68d9340abf5  libva-intel-driver-1.7.1.tar.bz2"

@@ -1,0 +1,45 @@
+# Contributor: William Pitcock <nenolod@dereferenced.org>
+# Maintainer: Francesco Colista <fcolista@alpinelinux.org>
+pkgname=openal-soft
+pkgver=1.17.2
+pkgrel=0
+pkgdesc="software implementation of OpenAL API"
+url="http://kcat.strangesoft.net/openal.html"
+arch="all"
+license="LGPL"
+depends=""
+depends_dev="alsa-lib-dev"
+makedepends="$depends_dev linux-headers cmake"
+install=""
+subpackages="$pkgname-dev"
+source="http://kcat.strangesoft.net/openal-releases/${pkgname}-${pkgver}.tar.bz2"
+
+_srcdir="${srcdir}/${pkgname}-${pkgver}"
+_builddir="${srcdir}/build"
+prepare() {
+	local i
+
+	cd "$_srcdir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+
+	mkdir -p "$_builddir"
+}
+
+build() {
+	cd "$_builddir"
+	cmake -DCMAKE_INSTALL_PREFIX="/usr" "$_srcdir" || return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+md5sums="1764e0d8fec499589b47ebc724e0913d  openal-soft-1.17.2.tar.bz2"
+sha256sums="a341f8542f1f0b8c65241a17da13d073f18ec06658e1a1606a8ecc8bbc2b3314  openal-soft-1.17.2.tar.bz2"
+sha512sums="50c20cd3ddada55d91643a79c2894d5a14315d5fc1ed8e870e3d8d3f410e8b7d8da29b838226e7fce37fbeca719ff919b51806f72e4cd529a18fbe8bd68860e3  openal-soft-1.17.2.tar.bz2"

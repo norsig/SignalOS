@@ -1,0 +1,64 @@
+# Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Contributor: Jonathan Curran <jonathan@curran.in>
+# Maintainer: Jonathan Curran <jonathan@curran.in>
+pkgname=opensmtpd
+pkgver=5.9.2p1
+pkgrel=0
+pkgdesc="secure, reliable, lean, and easy-to configure SMTP server"
+url="http://www.opensmtpd.org"
+arch="all"
+license="ISC"
+depends=""
+depends_dev=""
+makedepends="automake autoconf libtool mdocml db-dev libasr-dev libevent-dev
+	fts-dev zlib-dev openssl-dev bison flex-dev"
+install="$pkgname.pre-install $pkgname.post-install"
+subpackages="$pkgname-doc"
+source="https://www.opensmtpd.org/archives/${pkgname}-${pkgver}.tar.gz
+	smtpd.initd
+	aliases"
+options="suid"
+
+builddir="$srcdir"/$pkgname-$pkgver
+build() {
+	cd "$builddir"
+	./configure \
+		--prefix=/usr \
+		--sysconfdir=/etc/smtpd \
+		--with-libssl=/usr/include/openssl \
+		--mandir=/usr/share/man \
+		--libexecdir=/usr/lib/$pkgname \
+		--with-table-db \
+		--with-user-queue=smtpq \
+		--with-group-queue=smtpq \
+		--with-user-smtpd=smtpd \
+		--with-path-socket=/run \
+		--with-libs="-lfts" \
+		--with-pie \
+		--with-path-CAfile=/etc/ssl/certs/ca-certificates.crt \
+		--with-mantype=man || return 1
+        make || return 1
+}
+
+package() {
+	make DESTDIR="${pkgdir}" -C "$builddir" install || return 1
+	sed -i 's#/etc/mail#/etc/smtpd#g' "$pkgdir"/etc/smtpd/smtpd.conf
+
+	install -Dm755 "$srcdir"/smtpd.initd "$pkgdir"/etc/init.d/smtpd || return 1
+	install -Dm644 "$srcdir"/aliases "$pkgdir"/etc/smtpd/aliases || return 1
+
+	# Create compatibility symlinks for mailq, newaliases, makemap and sendmail.
+	for binary in mailq newaliases makemap sendmail; do
+		ln -s /usr/sbin/smtpctl "$pkgdir"/usr/sbin/$binary || return 1
+	done
+}
+
+md5sums="d109374dcc4bc8be14f790b859f1dd31  opensmtpd-5.9.2p1.tar.gz
+a2f311a82c9a85f5c52975c4dbbdbd53  smtpd.initd
+561d2aead043a64a4ce5d66b4f78223e  aliases"
+sha256sums="3522f273c1630c781facdb2b921228e338ed4e651909316735df775d6a70a71d  opensmtpd-5.9.2p1.tar.gz
+ab4b7f066a38dadd7a2dc6d7c3a06c3a8ac2367340d97e2a8b54f571ea0f8cf8  smtpd.initd
+7bef80f8d86aa5463c864681482a4908d22ff8b6f3e47d2a410ef2d59b316b53  aliases"
+sha512sums="99ca15101557848aa6d642f0c0171b152d805192e6839a97410b19431c981a21a5c0dc011e2c8cd91f3e6f6acb37a77f0f4c8e68114bf9808240392fe2b5d375  opensmtpd-5.9.2p1.tar.gz
+8152fecadeb1d818b7865eae040123f855e81fafbb4b40d12a64336e09dc486c10e6828809182c8172bfd9f54dc7d050a154b61d5e6049df6ffd8a7b6e5e1277  smtpd.initd
+929ba0b8befca6cad558602f9793a9c653923924ee524902916b8ef4952d1ea8a391895e7450ed9768eb82a07bd307b49561f5d49ea4711bd87a1a73eb8d7dad  aliases"

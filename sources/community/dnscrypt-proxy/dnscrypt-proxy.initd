@@ -1,0 +1,24 @@
+#!/sbin/openrc-run
+
+pidfile=/var/run/dnscrypt-proxy/dnscrypt-proxy.pid
+command=/usr/sbin/dnscrypt-proxy
+command_args="--pidfile=$pidfile --daemonize
+	--logfile=${DNSCRYPT_LOGFILE:-/var/log/dnscrypt-proxy/dnscrypt-proxy.log}
+	--user=${DNSCRYPT_USER:-dnscrypt}
+	--local-address=${DNSCRYPT_LOCALIP:-127.0.0.1:53}"
+
+
+depend() {
+	use net
+	before dns
+	after logger firewall
+}
+
+start_pre() {
+	checkpath --directory ${pidfile%/*}
+	# by default opendns is used but its possible to override
+	if [ -n "$RESOLVER" ] && [ -n "$PUBKEY" ] && [ -n "$PROVIDER" ]; then
+		command_args="$command_args -r ${RESOLVER} -k ${PUBKEY} -N ${PROVIDER}"
+	fi
+}
+

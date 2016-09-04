@@ -1,0 +1,52 @@
+# Contributor: Carlo Landmeter <clandmeter@gmail.com>
+# Maintainer:
+pkgname=tcl-tls
+pkgver=1.6.7
+pkgrel=0
+pkgdesc="OpenSSL extension to Tcl"
+url="http://tls.sourceforge.net/"
+arch="all"
+license="BSD"
+depends=""
+depends_dev="tcl-dev openssl-dev"
+makedepends="$depends_dev"
+install=""
+subpackages="$pkgname-dev"
+source="http://downloads.sourceforge.net/project/tls/tls/$pkgver/tls$pkgver-src.tar.gz"
+
+_builddir="$srcdir/tls${pkgver}"
+
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--localstatedir=/var \
+		--enable-threads \
+		--enable-shared \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+md5sums="2765d84a7a520c9979d82a0abebc1647  tls1.6.7-src.tar.gz"
+sha256sums="5119de3e5470359b97a8a00d861c9c48433571ee0167af0a952de66c99d3a3b8  tls1.6.7-src.tar.gz"
+sha512sums="f8dbb7fc9890bcb3e3930cad66209ca67cd68c0aa2288caa6a3bb1fd1ad21444f1eb056b4b4585ec86da64079cd9df72cdd6ff201102820d45e6397d6148d21c  tls1.6.7-src.tar.gz"

@@ -1,0 +1,50 @@
+# Maintainer: Peter Bui <pnutzh4x0r@gmail.com>
+pkgname=py-asn1-modules
+_pkgname=pyasn1-modules
+pkgver=0.0.8
+pkgrel=1
+pkgdesc="A collection of ASN.1-based protocols modules"
+url="http://pypi.python.org/pypi/pyasn1-modules"
+arch="noarch"
+license="BSD"
+depends=""
+makedepends="python-dev python3-dev"
+install=""
+subpackages="py3-${pkgname/py-/}:_py3 py2-${pkgname/py-/}:_py2"
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz"
+
+builddir="$srcdir"/$_pkgname-$pkgver
+
+build() {
+	cd "$builddir"
+	python2 setup.py build || return 1
+	python3 setup.py build || return 1	
+}
+
+package() {
+	mkdir -p "$pkgdir"
+}
+
+_py() {
+	local python=$1
+	pkgdesc="$pkgdesc - $python"
+	install_if="$pkgname=$pkgver-r$pkgrel $python" 	
+	cd "$builddir"
+	$python setup.py install --prefix=/usr --root="$subpkgdir"
+}
+
+_py2() {
+	_py python2
+	depends="py2-openssl py2-asn1"
+	replaces="$pkgname"
+}
+
+_py3() {
+	_py python3
+	depends="py3-openssl py3-asn1"
+}
+
+
+md5sums="178129bc7fbf07215c25230c5f053f81  pyasn1-modules-0.0.8.tar.gz"
+sha256sums="10561934f1829bcc455c7ecdcdacdb4be5ffd3696f26f468eb6eb41e107f3837  pyasn1-modules-0.0.8.tar.gz"
+sha512sums="6040d4f83c6b00f7a0e6ba0e1264090d0fa96fc39e97b04d624721cef200b6cf4dabfe550127ade4edc181187ca1b4219fb46a95082a39e6291d0e2e08f36d78  pyasn1-modules-0.0.8.tar.gz"

@@ -1,0 +1,37 @@
+# Contributor: Carlo Landmeter <clandmeter@gmail.com>
+# Maintainer: Carlo Landmeter <clandmeter@gmail.com>
+pkgname=c-ares
+pkgver=1.11.0
+pkgrel=0
+pkgdesc="An asynchronously DNS/names resolver library"
+url="http://c-ares.haxx.se/"
+arch="all"
+license="MIT"
+depends=""
+makedepends=""
+subpackages="$pkgname-doc $pkgname-dev"
+source="http://c-ares.haxx.se/download/$pkgname-$pkgver.tar.gz"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--enable-shared \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make -j1 DESTDIR="$pkgdir" install || return 1
+}
+
+md5sums="d5c6d522cfc54bb6f215a0b7912d46be  c-ares-1.11.0.tar.gz"
+sha256sums="b3612e6617d9682928a1d50c1040de4db6519f977f0b25d40cf1b632900b3efd  c-ares-1.11.0.tar.gz"
+sha512sums="0a3bbe95dbc80201a7024db564c057a788f252b09c4bcc1539d2db8b12f3497db66710e24b1c18132579ddbe3015f1d916b378b83f9c32deb5fba206ffaf9f27  c-ares-1.11.0.tar.gz"

@@ -1,0 +1,11 @@
+#!/sbin/openrc-run
+
+pidfile="/run/csync2.pid"
+command="/usr/sbin/csync2"
+command_args="-ii${CSYNC2_OPTS:+ $CSYNC2_OPTS}"
+command_background="yes"
+
+depend() {
+    need net localmount
+    after firewall
+}

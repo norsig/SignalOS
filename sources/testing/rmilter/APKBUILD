@@ -1,0 +1,64 @@
+# Maintainer: Valery Kartel <valery.kartel@gmail.com>
+# Contributor: Valery Kartel <valery.kartel@gmail.com>
+# Contributor: Nathan Angelacos <nangel@alpinelinux.org>
+pkgname=rmilter
+pkgver=1.9.2
+pkgrel=1
+pkgdesc="Rspamd mail filter"
+url="https://rspamd.com"
+arch="all"
+license="BSD"
+pkgusers="rmilter"
+pkggroups="rmilter"
+depends=""
+depends_dev=""
+makedepends="$depends_dev cmake bison flex bsd-compat-headers
+	openssl-dev pcre-dev libmilter-dev opendkim-dev hiredis-dev
+	glib-dev"
+install="$pkgname.pre-install"
+source="$pkgname-$pkgver.tar.gz::https://github.com/vstakhov/$pkgname/archive/$pkgver.tar.gz
+	$pkgname.conf
+	$pkgname.confd
+	$pkgname.initd
+	config_dir.patch
+	system_hiredis.patch
+"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+build() {
+	cd "$_builddir"
+	cmake CMakeLists.txt \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DRMILTER_USER=$pkgusers \
+		-DRMILTER_GROUP=$pkggroups \
+	|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+	install -d "$pkgdir"/etc/mail/dkim
+	install -Dm755 "$srcdir"/$pkgname.initd "$pkgdir"/etc/init.d/$pkgname
+	install -Dm644 "$srcdir"/$pkgname.confd "$pkgdir"/etc/conf.d/$pkgname
+	install -Dm644 "$srcdir"/$pkgname.conf "$pkgdir"/etc/$pkgname/$pkgname.conf
+}
+
+md5sums="c64ad097d79b8bc4efe8fba15b72e6b6  rmilter-1.9.2.tar.gz
+74b3a71b9e14d548f9bbade386cdacae  rmilter.conf
+e159e4461b765b487f72c05b3d504a9c  rmilter.confd
+a3fa9ba78d3392716d04f27e40e40ac8  rmilter.initd
+e4f3e1ea90401b8d55e6a381af05b994  config_dir.patch
+e5d20803b01b6d47e81a700bd12aa529  system_hiredis.patch"
+sha256sums="3e44977c39ece541c90ff1075b58847f44d310aa9d4ee49bc2df96e1ee4fb39f  rmilter-1.9.2.tar.gz
+65f602b802766ff71807ca5537c2c17b400e0dfd915223ddeb306db074162019  rmilter.conf
+fad2d6baea215c3b31750e8128efe557a27024974eca2ff359b8fa921acb9076  rmilter.confd
+ce592d80851b0a52138bfa97f70c3e98a21555daa9e8a9f3966b7cafca1acc3c  rmilter.initd
+1aa29ce0a638356d4ebd75757a2094f9db20ad3895867e3676d5ae1129352760  config_dir.patch
+12d5050e60bb8c2cd1e5468a65d2f447e83f6bd49c8cac92c54e4cd40ed47e45  system_hiredis.patch"
+sha512sums="4938515d18d4cff363266348cbd00b85690f889cb479a0e2fb61fa74e1e0deb3e78ec06132537ae001ccec375d0bab10af77c4a4c6fb248dc7f9f929c5a57eb9  rmilter-1.9.2.tar.gz
+4b577dbe63277dd932be74fad78989366056e3d0b7945af17906da17f685b19d0c58078398277ece4cff6304af8e20f45e61d196c86f933c7c5857efdecbdd81  rmilter.conf
+d222bcf307e89f110efed524c2d708d3512d4400235091de0250d1f60358f65871667112bdad61bbcd948a9abdb8a46d8c3952cf78585cfb59fcf94f15849062  rmilter.confd
+2ec3eb3fece210867001cf3a799336c77dfec7dd770442852a14b337205893aaefe24999ca5c0d92706bf8e9f1c8a192282e5c48b7bde2e591b03f721560e6e3  rmilter.initd
+6ac3a1d73e52c156b60cabaabceea6e01c7e5f2dce78a557ccce24127440a8fea713b2465ecdd29486c4283afb6dee723cbcb476f1789bcd3876dd6c6aa5ebd1  config_dir.patch
+14ddca01c495cc4fa1467deb682f049d91586f0d670c596ee1e1c7c40ba12ca58c40e29ca1d18abb4d19387b668caaf627e2cdd35b172f3ca85f6bfe8fe8295a  system_hiredis.patch"

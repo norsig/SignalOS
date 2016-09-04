@@ -1,0 +1,36 @@
+# Maintainer:  Leonardo Arena <rnalrd@alpinelinux.org>
+pkgname=perl-netaddr-ip
+_realname=NetAddr-IP
+pkgver=4.078
+pkgrel=1
+pkgdesc="Perl extension for managing IPv4 and IPv6 addresses and subnets"
+url="http://search.cpan.org/~miker/NetAddr-IP-$pkgver/"
+arch="all"
+license="GPL2 and Artistic"
+depends="perl"
+makedepends="perl-dev"
+install=""
+subpackages="$pkgname-doc"
+source="http://search.cpan.org/CPAN/authors/id/M/MI/MIKER/$_realname-$pkgver.tar.gz"
+
+_builddir="$srcdir/$_realname-$pkgver"
+prepare() {
+	return 0
+}
+
+build() {
+	cd $_builddir
+	PERL_MM_USE_DEFAULT=1 perl Makefile.PL INSTALLDIRS=vendor || return 1
+	make || return 1
+}
+
+package() {
+	cd $_builddir
+	make DESTDIR="$pkgdir" install
+	# creates file collision among perl modules
+	find "$pkgdir" -name perllocal.pod -delete
+}
+
+md5sums="bca8406520b6535a3f9661d385705d97  NetAddr-IP-4.078.tar.gz"
+sha256sums="b9a12294e58dcece0189630ddb6926e37169cbbb24c76091f1e604e426c19614  NetAddr-IP-4.078.tar.gz"
+sha512sums="37ca056da216ead336ea3b3ce791ef804fc26d54c45a40eefc3adb662dfe02d7ac8618128eba8eff9ebc0be4a3b511fed14363ca63eb99e7e2b0e44416948311  NetAddr-IP-4.078.tar.gz"

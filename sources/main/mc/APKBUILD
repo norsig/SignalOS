@@ -1,0 +1,82 @@
+# Contributor: Valery Kartel <valery.kartel@gmail.com>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=mc
+pkgver=4.8.17
+pkgrel=2
+pkgdesc="A filemanager/shell that emulates Norton Commander"
+url="http://www.midnight-commander.org"
+arch="all"
+license="GPL3+"
+depends=""
+subpackages="$pkgname-doc $pkgname-lang"
+makedepends="e2fsprogs-dev glib-dev pcre-dev ncurses-dev libssh2-dev"
+source="http://www.midnight-commander.org/downloads/$pkgname-$pkgver.tar.bz2
+	alpine_syntax.patch"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+
+prepare() {
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+			*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--libexecdir=/usr/lib \
+		--mandir=/usr/share/man \
+		--sysconfdir=/etc \
+		--enable-background \
+		--enable-charset \
+		--enable-largefile \
+		--enable-vfs-sftp \
+		--with-edit \
+		--with-mmap \
+		--with-screen=ncurses \
+		--with-subshell \
+		--with-vfs \
+		--without-debug \
+		--without-gnome \
+		--without-gpm-mouse \
+		--without-included-gettext \
+		--without-samba \
+		--without-x \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+doc() {
+	default_doc;
+	rm -fr "$subpkgdir"/usr/share/man/??
+	mkdir -p "$subpkgdir"/usr/share/doc
+	mv "$pkgdir"/usr/share/mc/examples "$subpkgdir"/usr/share/doc/mc
+	find "$pkgdir"/usr/lib/mc -name README* -exec mv {} "$subpkgdir"/usr/share/doc/mc/ \;
+}
+
+lang() {
+	default_lang;
+	mkdir -p "$subpkgdir"/etc/mc \
+		"$subpkgdir"/usr/share/mc/help \
+		"$subpkgdir"/usr/share/mc/hints
+	mv "$pkgdir"/etc/mc/mc.menu.* "$subpkgdir"/etc/mc/
+	mv "$pkgdir"/usr/share/mc/help/mc.hlp.* "$subpkgdir"/usr/share/mc/help/
+	mv "$pkgdir"/usr/share/mc/hints/mc.hint.* "$subpkgdir"/usr/share/mc/hints/
+}
+
+md5sums="6e9c07066e40af06b263a13fad17a07f  mc-4.8.17.tar.bz2
+e483f42ec389b0be50d8b9bafab889eb  alpine_syntax.patch"
+sha256sums="66d0cb37baaed8ef930f8ad25a634adad4f264eb61820893920ac87b9dfb783b  mc-4.8.17.tar.bz2
+9ca96cc0ea6893e21496621f88a58fbc377d64cc39f5e350e8cec9045bf3bb6c  alpine_syntax.patch"
+sha512sums="148698b1455380acf011755f37d011f6c6e9888a9b7e0e9f0e9e035ad425486bf89f6a8fd13da17cd39417b4d1c8da6663555cb2de231bd1fed62b8ae25506d3  mc-4.8.17.tar.bz2
+aee89eaacaafcdfe2ceb2eb7b7dcf08d669dbaffcb76f4c1613498017096c33068b7bf9d06e6f7d0685c9928cebaa932ab78b3a68f3b2de59b512022b3944e8d  alpine_syntax.patch"

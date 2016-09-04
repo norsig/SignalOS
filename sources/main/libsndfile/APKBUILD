@@ -1,0 +1,41 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=libsndfile
+pkgver=1.0.27
+pkgrel=0
+pkgdesc="A C library for reading and writing files containing sampled sound"
+url="http://www.mega-nerd.com/libsndfile"
+arch="all"
+license="LGPL2+"
+subpackages="$pkgname-dev $pkgname-doc"
+depends=
+depends_dev="flac-dev libvorbis-dev libogg-dev"
+makedepends="linux-headers alsa-lib-dev $depends_dev"
+source="http://www.mega-nerd.com/$pkgname/files/$pkgname-$pkgver.tar.gz"
+
+_builddir="$srcdir/$pkgname-$pkgver"
+
+prepare() {
+	cd "$_builddir"
+	return 0
+}
+
+build () {
+	cd "$_builddir"
+	ac_cv_sys_largefile_CFLAGS="-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64" \
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--disable-sqlite \
+		--enable-largefile \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+md5sums="fd1d97c6077f03b5d984d7956ffedb7a  libsndfile-1.0.27.tar.gz"
+sha256sums="a391952f27f4a92ceb2b4c06493ac107896ed6c76be9a613a4731f076d30fac0  libsndfile-1.0.27.tar.gz"
+sha512sums="8272e3219d64be01034d3f7f7565bf20075c04533469a963ad055f00767e9c2987463fb982894ddc1023d5d6c2338f55f8c3e6d2e36635484dde577a0d2ac770  libsndfile-1.0.27.tar.gz"

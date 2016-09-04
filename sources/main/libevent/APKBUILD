@@ -1,0 +1,46 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=libevent
+pkgver=2.0.22
+pkgrel=0
+pkgdesc="An event notification library"
+url="http://libevent.org/"
+arch="all"
+license="BSD"
+depends=""
+depends_dev="python"
+makedepends="$depends_dev openssl-dev"
+subpackages="$pkgname-dev"
+source="https://github.com/$pkgname/$pkgname/releases/download/release-${pkgver}-stable/$pkgname-${pkgver}-stable.tar.gz"
+_builddir="$srcdir"/$pkgname-$pkgver-stable
+
+prepare() {
+	cd "$_builddir"
+	update_config_sub || return 1
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--disable-static \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make -j1 DESTDIR=$pkgdir install || return 1
+}
+
+dev() {
+	replaces="libevent"
+	default_dev
+	mv "$pkgdir"/usr/bin "$subpkgdir"/usr/
+}
+
+md5sums="c4c56f986aa985677ca1db89630a2e11  libevent-2.0.22-stable.tar.gz"
+sha256sums="71c2c49f0adadacfdbe6332a372c38cf9c8b7895bb73dabeaa53cdcc1d4e1fa3  libevent-2.0.22-stable.tar.gz"
+sha512sums="990637f12e890bfa7f86c194c8b112701436e92b60afb829194879efb85d558b986261e6508fe29bde73981feada874438e2d442cec8ea5730c889954f9bc907  libevent-2.0.22-stable.tar.gz"

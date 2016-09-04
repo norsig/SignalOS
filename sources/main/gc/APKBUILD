@@ -1,0 +1,55 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=gc
+pkgver=7.4.2
+pkgrel=1
+pkgdesc="A garbage collector for C and C++"
+url="http://hboehm.info/gc/"
+arch="all"
+license="GPL"
+depends=
+makedepends='libatomic_ops-dev linux-headers'
+subpackages="$pkgname-dev $pkgname-doc libgc++:libgccpp"
+source="http://hboehm.info/gc/gc_source/gc-$pkgver.tar.gz
+	fix-boehm-gc.patch
+	"
+
+_builddir="$srcdir"/gc-${pkgver%[a-z]}
+prepare() {
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	[ "$CLIBC" = "musl" ] && export CFLAGS="$CFLAGS -D_GNU_SOURCE -DNO_GETCONTEXT -DUSE_MMAP -DHAVE_DL_ITERATE_PHDR"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--datadir=/usr/share/doc/gc \
+		--enable-cplusplus \
+		--disable-static \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+libgccpp() {
+	install -d "$subpkgdir"/usr/lib
+	mv "$pkgdir"/usr/lib/libgccpp.* "$subpkgdir"/usr/lib/
+}
+
+md5sums="12c05fd2811d989341d8c6d81f66af87  gc-7.4.2.tar.gz
+2580315e6df59bb167b8292c351f82f5  fix-boehm-gc.patch"
+sha256sums="63320ad7c45460e4a40e03f5aa4c6893783f21a16416c3282b994f933312afa2  gc-7.4.2.tar.gz
+da9ffdb4e7abc3deaaa19ef9de118311a8cf67268df36085c80412b1a60307d1  fix-boehm-gc.patch"
+sha512sums="2e21516addf268780641ee55c0cb3ecc2d96fa963faffee5beadcade9c6bf1ee49ee1a75b076b5d49ddde7c839fb94f4c3623ca8412d14c2a5bf6ca30d424a72  gc-7.4.2.tar.gz
+f2b533f0a96dabf8ed33316c393ea2878cb3968879e50155c71fbb50bf0cad3fe08836847dcc5c2bc32ad2dae64b8607bf92fa863224e3ca407ef62d61b663bb  fix-boehm-gc.patch"

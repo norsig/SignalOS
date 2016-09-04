@@ -1,0 +1,70 @@
+# Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=mercurial
+pkgver=3.9
+pkgrel=1
+pkgdesc="A scalable distributed SCM tool"
+url="https://www.mercurial-scm.org/"
+arch="all"
+license="GPL2+"
+depends=""
+makedepends="python-dev"
+subpackages="
+	$pkgname-doc
+	$pkgname-vim:vim
+	$pkgname-zsh-completion:zshcomp
+	$pkgname-bash-completion:bashcomp"
+source="https://www.mercurial-scm.org/release/$pkgname-$pkgver.tar.gz"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+build() {
+	cd "$_builddir"
+	python setup.py build || return 1
+}
+
+package() { 
+	cd "$_builddir"
+	python setup.py install --root="$pkgdir" || return 1
+	install -m755 contrib/hgk hgeditor "$pkgdir"/usr/bin || return 1
+
+	for man in doc/*.?; do
+		install -Dm644 "$man" \
+			"$pkgdir"/usr/share/man/man${man##*.}/${man##*/} || return 1
+	done
+}
+
+vim() {
+	depends=""
+	pkgdesc="Vim syntax for $pkgname"
+	install_if="vim $pkgname=$pkgver-r$pkgrel"
+	arch="noarch"
+
+	cd "$_builddir"/contrib/vim/
+	mkdir -p "$subpkgdir"/usr/share/vim/vimfiles/syntax/
+	install -Dm644 HGAnnotate.vim hgtest.vim \
+		"$subpkgdir"/usr/share/vim/vimfiles/syntax/ || return 1
+}
+
+zshcomp() {
+	depends=""
+	pkgdesc="Zsh completions for $pkgname"
+	install_if="$pkgname=$pkgver-r$pkgrel zsh"
+	arch="noarch"
+
+	install -Dm644 "$_builddir"/contrib/zsh_completion \
+		"$subpkgdir"/usr/share/zsh/site-functions/_${pkgname} || return 1
+}
+
+bashcomp() {
+	depends=""
+	pkgdesc="Bash completions for $pkgname"
+	install_if="$pkgname=$pkgver-r$pkgrel bash-completion"
+	arch="noarch"
+
+	install -Dm644 "$_builddir"/contrib/bash_completion \
+		"$subpkgdir"/usr/share/bash-completion/completions/${pkgname} || return 1
+}
+
+md5sums="e2b355da744e94747daae3a5339d28a0  mercurial-3.9.tar.gz"
+sha256sums="834f25dcff44994198fb8a7ba161a6e24204dbd63c8e6270577e06e6cedbdabc  mercurial-3.9.tar.gz"
+sha512sums="148d5f4c1c8c78b654b03d898f8e9624697caf3f75ff8d56496f8ba5b0e28c487f6800ea2e7e26bf2ac5f01e9bdf92e7d3b4941c88521372af090a3587a0227b  mercurial-3.9.tar.gz"

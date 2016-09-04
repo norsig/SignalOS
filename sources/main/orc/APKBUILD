@@ -1,0 +1,62 @@
+# Contributor: Łukasz Jendrysik <scadu@yandex.com>
+# Contributor: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=orc
+pkgver=0.4.25
+pkgrel=0
+pkgdesc="The Oil Run-time Compiler"
+url="http://code.entropywave.com/projects/orc/"
+arch="all"
+license="BSD"
+depends=
+depends_dev=
+makedepends="$depends_dev linux-headers"
+install=""
+subpackages="$pkgname-dev $pkgname-doc $pkgname-compiler"
+source="http://gstreamer.freedesktop.org/src/orc/${pkgname}-${pkgver}.tar.xz"
+
+_builddir="$srcdir"/orc-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--localstatedir=/var \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+dev() {
+	default_dev
+	mkdir -p "$subpkgdir"/usr/bin
+	mv "$pkgdir"/usr/bin/orc-bugreport "$subpkgdir"/usr/bin/
+}
+
+compiler() {
+	pkgdesc="Orc compiler"
+	mkdir -p "$subpkgdir"/usr/
+	mv "$pkgdir"/usr/bin "$subpkgdir"/usr/
+}
+
+md5sums="8582a28b15f53110c88d8043d9f55bcf  orc-0.4.25.tar.xz"
+sha256sums="c1b1d54a58f26d483f0b3881538984789fe5d5460ab8fab74a1cacbd3d1c53d1  orc-0.4.25.tar.xz"
+sha512sums="13f636e3ab86e725e15f885462db1944744b8389f263b7afa2279c0e68fb8e71344a646ecb8b7a7fce03e93ab78351a1b79d5eaef106ab8e1d808e82b514316a  orc-0.4.25.tar.xz"

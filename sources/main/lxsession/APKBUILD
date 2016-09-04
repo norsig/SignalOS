@@ -1,0 +1,49 @@
+# Contributor: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=lxsession
+pkgver=0.5.2
+pkgrel=0
+pkgdesc="Lightweight X11 session manager"
+url="http://lxde.org/"
+arch="all"
+license="GPLv2+"
+depends=""
+makedepends="gtk+-dev dbus-glib-dev polkit-dev libunique-dev"
+install=""
+subpackages="$pkgname-doc $pkgname-lang"
+source="http://downloads.sourceforge.net/sourceforge/lxde/lxsession-$pkgver.tar.xz"
+
+_builddir="$srcdir"/lxsession-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	update_config_sub || return 1
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--localstatedir=/var \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+md5sums="2957acccbf9ce37ef8205ec5424f8047  lxsession-0.5.2.tar.xz"
+sha256sums="2d55e9ea80057fe5ffd68a91a15bb004ad7bf019e50807a8bb9b342115efaada  lxsession-0.5.2.tar.xz"
+sha512sums="2e08e5263bb4ef9d8051e84997347a12d2f1ba75cf4e70f9e3ba783a509246f0d6efd672ac1cc1d0fffc8707710ddb148298449b5365deb6785623d596bc3da1  lxsession-0.5.2.tar.xz"

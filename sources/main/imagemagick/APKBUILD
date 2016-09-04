@@ -1,0 +1,71 @@
+# Contributor: Łukasz Jendrysik <scadu@yandex.com>
+# Contributor: Carlo Landmeter <clandmeter@gmail.com>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=imagemagick
+pkgver=6.9.5.5
+_abiver=6
+_pkgver=${pkgver%.*}-${pkgver##*.}
+pkgrel=0
+pkgdesc="A collection of tools and libraries for many image formats"
+url="http://www.imagemagick.org/"
+arch="all"
+license="custom"
+depends=""
+options="libtool"
+makedepends="zlib-dev libpng-dev libjpeg-turbo-dev freetype-dev fontconfig-dev
+	perl-dev ghostscript-dev libwebp-dev libtool tiff-dev lcms2-dev libxml2-dev"
+subpackages="$pkgname-doc $pkgname-dev $pkgname-c++:_cxx"
+source="http://www.imagemagick.org/download/releases/ImageMagick-$_pkgver.tar.xz"
+
+builddir="$srcdir/ImageMagick-${_pkgver}"
+
+build() {
+	cd "$builddir"
+	# fix doc dir, Gentoo bug 91911
+	sed -i -e \
+		's:DOCUMENTATION_PATH="${DATA_DIR}/doc/${DOCUMENTATION_RELATIVE_PATH}":DOCUMENTATION_PATH="/usr/share/doc/imagemagick":g' \
+		configure || die
+
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--without-threads \
+		--without-x \
+		--with-tiff \
+		--with-lcms2 \
+		--with-gslib \
+		--with-gs-font-dir=/usr/share/fonts/Type1 \
+		--with-modules \
+		--with-xml \
+		$_pic \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$builddir"
+	make -j1 DESTDIR="$pkgdir" install || return 1
+	if ! [ -e "$pkgdir"/usr/lib/libMagickCore-$_abiver.Q16.so ]; then
+		error "Has ABI verision changed? (current is $_abiver)"
+		return 1
+	fi
+
+	find "$pkgdir" -name '.packlist' -o -name 'perllocal.pod' \
+		-o -name '*.bs' -delete
+
+	install -Dm644 LICENSE "$pkgdir"/usr/share/licenses/$pkgname/LICENSE  || return 1
+}
+
+_cxx() {
+	pkgdesc="ImageMagick Magick++ library (C++ bindings)"
+	mkdir -p "$subpkgdir"/usr/lib
+	mv "$pkgdir"/usr/lib/libMagick++*.so.* "$subpkgdir"/usr/lib/
+}
+
+md5sums="6ef5de159bbe0977bc82f44eea75dce8  ImageMagick-6.9.5-5.tar.xz"
+sha256sums="b3b5cc1989a53b8847ffdc3b5ed740ba0c9c4e9b103cbbac7d0a78e5b7d2936f  ImageMagick-6.9.5-5.tar.xz"
+sha512sums="b7ac42dbbcc243a685781ab83611d78e7535a63df6c230e9281b11d67232675197c9ed505e5dd15ff89acc8dd0dd4488728cc24dc93accbad914effe0772324c  ImageMagick-6.9.5-5.tar.xz"

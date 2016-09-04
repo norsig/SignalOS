@@ -1,0 +1,63 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+_luaversions="5.1 5.2 5.3"
+pkgname=lua-curl
+pkgver=0.3.1
+pkgrel=0
+pkgdesc="Lua bindings to cURL library"
+url="https://github.com/Lua-cURL/Lua-cURLv3"
+arch="all"
+license="MIT/X11"
+depends=
+makedepends="curl-dev"
+install=
+subpackages=""
+
+for _i in $_luaversions; do
+	makedepends="$makedepends lua${_i}-dev"
+	subpackages="$subpackages lua${_i}-curl:_split${_i/./}"
+done
+
+source="lua-curl-$pkgver.tar.gz::https://github.com/Lua-cURL/Lua-cURLv3/archive/v$pkgver.tar.gz"
+
+_builddir="$srcdir"/Lua-cURLv3-$pkgver
+build() {
+	cd "$srcdir"
+	for _i in $_luaversions; do
+		cp -r "$_builddir" build-$_i || return 1
+
+		cd build-$_i
+		echo LUA_IMPL=lua$_i >> .config
+		make LUA_VERSION=$_i || return 1
+		cd ..
+	done
+}
+
+package() {
+	cd "$srcdir"
+	for _i in $_luaversions; do
+		(cd "$srcdir"/build-$_i && make install LUA_VERSION=$_i \
+			DESTDIR="$pkgdir") \
+			|| return 1
+	done
+}
+
+_split() {
+	local d= _ver=$1
+	pkgdesc="$pkgdesc for Lua $_ver"
+	install_if="lua$_ver $pkgname=$pkgver-r$pkgrel"
+	depends=
+	for d in usr/lib/lua usr/share/lua; do
+		if [ -d "$pkgdir"/$d/$_ver ]; then
+			mkdir -p "$subpkgdir"/$d
+			mv "$pkgdir"/$d/$_ver "$subpkgdir"/$d/ || return 1
+		fi
+	done
+}
+
+for _i in $_luaversions; do
+	eval "_split${_i/./}() { _split $_i; }"
+done
+
+md5sums="99fba4026f468c87531ce06380593196  lua-curl-0.3.1.tar.gz"
+sha256sums="3b6a4113c27d544d0673dcd31526ff650a7a5482d8077cc29711eb51788c5c4d  lua-curl-0.3.1.tar.gz"
+sha512sums="4cce4372409499f2245130fbc7b1ed3bcb6657b10f6368ee797d2e754f41701bba1a6b8473e08066b7087b55d9dda1beba67eac646ce3f4c0519a1a0bdbbfa44  lua-curl-0.3.1.tar.gz"

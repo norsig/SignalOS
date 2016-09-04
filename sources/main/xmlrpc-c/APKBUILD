@@ -1,0 +1,78 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=xmlrpc-c
+pkgver=1.39.09
+pkgrel=0
+pkgdesc="This library provides a modular implementation of XML-RPC for C and C++"
+url="http://xmlrpc-c.sourceforge.net/"
+arch="all"
+license="BSD and MIT"
+depends=
+depends_dev="libxml2-dev"
+makedepends="libtool curl-dev libxml2-dev zlib-dev"
+subpackages="$pkgname-dev $pkgname-doc $pkgname-client
+	$pkgname-client++:clientxx xmlrpc-c++:cxx $pkgname-abyss"
+source="http://heanet.dl.sourceforge.net/project/xmlrpc-c/Xmlrpc-c%20Super%20Stable/$pkgver/xmlrpc-$pkgver.tgz
+	host-os-uclibc.patch"
+
+builddir="$srcdir"/xmlrpc-$pkgver
+
+build() {
+	cd "$builddir"
+	update_config_sub || return 1
+	export CXXFLAGS="$CXXFLAGS -std=gnu++98"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--mandir=/usr/share/man \
+		--enable-libxml2-backend \
+		--disable-cgi-server \
+		--disable-libwww-client \
+		--disable-wininet-client \
+		|| return 1
+	make -j1 AR=ar RANLIB=ranlib || return 1
+}
+
+package() {
+	cd "$builddir"
+	make -j1 DESTDIR="$pkgdir" AR=ar RANLIB=ranlib install || return 1
+	install -m 644 -D doc/COPYING "$pkgdir"/usr/share/licenses/$pkgname/COPYING
+}
+
+client() {
+	pkgdesc="C client libraries for xmlrpc-c"
+	replaces="$pkgname"
+	mkdir -p "$subpkgdir"/usr/lib
+	mv "$pkgdir"/usr/lib/libxmlrpc_client.so.* "$subpkgdir"/usr/lib/
+}
+
+clientxx() {
+	replaces="libxml-c++"
+	pkgdesc="C++ client libraries for xmlrpc-c"
+	mkdir -p "$subpkgdir"/usr/lib
+	mv "$pkgdir"/usr/lib/libxmlrpc_client++.so.* "$subpkgdir"/usr/lib/
+}
+
+cxx() {
+	pkgdesc="This library provides a modular implementation of XML-RPC for C++"
+	replaces="$pkgname"
+	mkdir -p "$subpkgdir"/usr/lib
+	mv "$pkgdir"/usr/lib/*++* \
+		"$pkgdir"/usr/lib/libxmlrpc_packetsocket.so.* \
+		"$pkgdir"/usr/lib/libxmlrpc_cpp.so.* \
+		"$subpkgdir"/usr/lib/
+}
+
+abyss() {
+	pkgdesc="Abyss server libraries for C++"
+	mkdir -p "$subpkgdir"/usr/lib
+	mv "$pkgdir"/usr/lib/*abyss* \
+		"$subpkgdir"/usr/lib/
+}
+
+md5sums="ea77df647daea6e94136415440e16b15  xmlrpc-1.39.09.tgz
+d3bee91077d3c7e1c0b80f6d7eeb2e63  host-os-uclibc.patch"
+sha256sums="a6525bf8adfb377dcaf6f05a171d72b62ba5b422090342bc9ba044bdc24a1186  xmlrpc-1.39.09.tgz
+0aae483973387c710ddc6103be36287cfe507eaa2e998805e6aa858be8eeaaa5  host-os-uclibc.patch"
+sha512sums="dc7fad79ad81dd374f8406e58294a7a50072499f88cd42263bd36d3bef01ecbc7fb3f383291369d4de86ff8cc9cfe7beba39cba30d475c3acdc97d707df865f8  xmlrpc-1.39.09.tgz
+30b57c5ffd65ea9781a56d1b4535e53c9d51c16e00d269992b239f1ff611fe3a510eb72b4d6ee96100706161d40738bbdf109580c745bfc9899d540ca6b3f1e5  host-os-uclibc.patch"

@@ -1,0 +1,34 @@
+# Contributor: Leonardo Arena <rnalrd@alpinelinux.org>
+# Maintainer:  Leonardo Arena <rnalrd@alpinelinux.org>
+pkgname=perl-archive-zip
+_realname=Archive-Zip
+pkgver=1.57
+pkgrel=0
+pkgdesc="Provide a perl interface to ZIP archive files."
+url="http://search.cpan.org/dist/Archive-Zip/"
+arch="noarch"
+license="GPL PerlArtistic"
+depends="perl"
+makedepends="perl-dev"
+install=
+subpackages="$pkgname-doc"
+source="http://search.cpan.org/CPAN/authors/id/P/PH/PHRED/$_realname-$pkgver.tar.gz"
+
+builddir="$srcdir/$_realname-$pkgver"
+build() {
+	cd "$builddir"
+
+	PERL_MM_USE_DEFAULT=1 perl Makefile.PL INSTALLDIRS=vendor || return 1
+	make || return 1
+}
+
+package() {
+	cd "$builddir"
+	make DESTDIR="$pkgdir" install
+	# creates file collision among perl modules
+	find "$pkgdir" -name perllocal.pod -delete
+}
+
+md5sums="d4ca4b60bcd3bc8c3aa67545163d2128  Archive-Zip-1.57.tar.gz"
+sha256sums="4238b4df7e5f244c684dec83f75c0fa56819c01c61f9314c91f6a60fd41d3694  Archive-Zip-1.57.tar.gz"
+sha512sums="accf68cb2b7171cd244b8ff92dd9d24c945856700731cede249273a5d44364f9bd1008d06472befc1af9c2d1bc70706f5ac792bede54a58d22ac882f4f3c81aa  Archive-Zip-1.57.tar.gz"

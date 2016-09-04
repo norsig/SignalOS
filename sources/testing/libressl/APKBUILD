@@ -1,0 +1,57 @@
+# Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Contributor: Orion <systmkor@gmail.com>
+# Maintainer: Orion <systmkor@gmail.com>
+pkgname=libressl
+pkgver=2.4.2
+pkgrel=0
+pkgdesc="Version of the TLS/crypto stack forked from OpenSSL"
+url="http://www.libressl.org/"
+arch="all"
+license="custom"
+depends="$pkgname-libcrypto=$pkgver-r$pkgrel $pkgname-libssl=$pkgver-r$pkgrel"
+makedepends="linux-headers"
+replaces="openssl"
+subpackages="$pkgname-libcrypto:_libs $pkgname-libssl:_libs $pkgname-libtls:_libs
+	$pkgname-dev $pkgname-doc"
+source="http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/$pkgname-$pkgver.tar.gz"
+builddir="$srcdir/$pkgname-$pkgver"
+
+build() {
+	cd "$builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--localstatedir=/var \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$builddir"
+	make DESTDIR="$pkgdir" install || return 1
+	install -Dm644 COPYING "$pkgdir"/usr/share/licenses/$pkgname/COPYING
+}
+
+dev() {
+	default_dev || return 1
+	replaces="openssl-dev"
+}
+
+_libs() {
+	local name="${subpkgname#$pkgname-}"
+	pkgdesc="libressl $name library"
+	depends=""
+
+	mkdir -p "$subpkgdir"/lib "$subpkgdir"/usr/lib
+	local f; for f in "$pkgdir"/usr/lib/$name.so.*; do
+		mv $f "$subpkgdir"/lib/
+		ln -s ../../lib/${f##*/} "$subpkgdir"/usr/lib/${f##*/}
+	done
+}
+
+md5sums="faf8eee9e66d7db24444b2be5c28a862  libressl-2.4.2.tar.gz"
+sha256sums="5f87d778e5d62822d60e38fa9621c1c5648fc559d198ba314bd9d89cbf67d9e3  libressl-2.4.2.tar.gz"
+sha512sums="abacecb318a787f5ef9d8469638b7485fe237d4d993f410d7da8c0773ab8eff8c7da988fe965f793b268711afe599dc28f994eedeaa2aafebeb40faa30af38db  libressl-2.4.2.tar.gz"

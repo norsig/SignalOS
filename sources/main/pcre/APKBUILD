@@ -1,0 +1,77 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=pcre
+pkgver=8.39
+pkgrel=0
+pkgdesc="Perl-compatible regular expression library"
+url="http://pcre.sourceforge.net"
+arch="all"
+license="BSD"
+depends=
+makedepends=""
+subpackages="$pkgname-dev $pkgname-doc $pkgname-tools
+	libpcrecpp libpcre16 libpcre32"
+source="ftp://ftp.csx.cam.ac.uk/pub/software/programming/$pkgname/$pkgname-$pkgver.tar.bz2
+	"
+
+_builddir="$srcdir/$pkgname-$pkgver"
+prepare() {
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i;  patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--enable-jit \
+		--enable-utf8 \
+		--enable-unicode-properties \
+		--enable-pcre8 \
+		--enable-pcre16 \
+		--enable-pcre32 \
+		--with-match-limit-recursion=8192 \
+		--htmldir=/usr/share/doc/$pkgname-$pkgver/html \
+		--docdir=/usr/share/doc/$pkgname-$pkgver \
+		|| return 1
+
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+libpcrecpp() {
+	pkgdesc="C++ bindings for PCRE"
+	mkdir -p "$subpkgdir"/usr/lib
+	mv "$pkgdir"/usr/lib/libpcrecpp.so* "$subpkgdir"/usr/lib/
+}
+
+libpcre16() {
+	pkgdesc="PCRE with 16 bit character support"
+	mkdir -p "$subpkgdir"/usr/lib
+	mv "$pkgdir"/usr/lib/libpcre16.so* "$subpkgdir"/usr/lib/
+}
+
+libpcre32() {
+	pkgdesc="PCRE with 16 bit character support"
+	mkdir -p "$subpkgdir"/usr/lib
+	mv "$pkgdir"/usr/lib/libpcre32.so* "$subpkgdir"/usr/lib/
+}
+
+tools() {
+	pkgdesc="Auxiliary utilities for PCRE"
+	mkdir -p "$subpkgdir"/usr/
+	mv "$pkgdir"/usr/bin "$subpkgdir"/usr/
+}
+
+md5sums="e3fca7650a0556a2647821679d81f585  pcre-8.39.tar.bz2"
+sha256sums="b858099f82483031ee02092711689e7245586ada49e534a06e678b8ea9549e8b  pcre-8.39.tar.bz2"
+sha512sums="8b0f14ae5947c4b2d74876a795b04e532fd71c2479a64dbe0ed817e7c7894ea3cae533413de8c17322d305cb7f4e275d72b43e4e828eaca77dc4bcaf04529cf6  pcre-8.39.tar.bz2"

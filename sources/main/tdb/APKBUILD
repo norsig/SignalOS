@@ -1,0 +1,63 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=tdb
+pkgver=1.3.9
+pkgrel=0
+pkgdesc="The tdb library"
+url="http://tdb.samba.org/"
+arch="all"
+license="LGPLv3+"
+depends=""
+depends_dev="python"
+makedepends="$depends_dev python-dev"
+install=""
+subpackages="$pkgname-dev py-$pkgname:_py $pkgname-libs"
+source="http://samba.org/ftp/tdb/tdb-$pkgver.tar.gz
+	"
+
+_builddir="$srcdir"/tdb-$pkgver
+prepare() {
+	local i
+	cd "$_builddir"
+	for i in $source; do
+		case $i in
+		*.patch) msg $i; patch -p1 -i "$srcdir"/$i || return 1;;
+		esac
+	done
+}
+
+build() {
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--localstatedir=/var \
+		--disable-rpath \
+		--bundled-libraries=NONE \
+		--builtin-libraries=replace \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+_py() {
+	pkgdesc="Python binding for the tdb library"
+	mkdir -p "$subpkgdir"/usr/lib
+	mv "$pkgdir"/usr/lib/python* "$subpkgdir"/usr/lib/
+}
+
+libs() {
+	default_libs
+	replaces="tdb"
+}
+
+md5sums="20c980778114543656e0770249d13735  tdb-1.3.9.tar.gz"
+sha256sums="7101f726e6d5c70f14e577b01c133e2e6059c4455239115e56a12ba64fc084d2  tdb-1.3.9.tar.gz"
+sha512sums="ee724e54d6eef51cb368bccbf41a1ab326f3b618e8366d8b43b91953a30e4c486842cd7f41b83f613becb1e4117ce4831b1065d6efdcf14bb96b545ef1dd8175  tdb-1.3.9.tar.gz"

@@ -1,0 +1,43 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=xfce4-notifyd
+pkgver=0.3.0
+pkgrel=0
+pkgdesc="notification daemon for the xfce desktop"
+url="http://spuriousinterrupt.org/projects/xfce4-notifyd"
+arch="all"
+license="GPL2"
+depends="hicolor-icon-theme"
+makedepends="gtk+-dev libxfce4util libxfce4ui-dev libsexy-dev xfconf-dev
+	dbus-glib-dev libglade-dev libnotify-dev"
+install=
+subpackages="$pkgname-lang $pkgname-doc"
+source="http://archive.xfce.org/src/apps/xfce4-notifyd/${pkgver%.*}/xfce4-notifyd-$pkgver.tar.bz2"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+
+prepare() {
+	cd "$_builddir"
+}
+
+build () { 
+	cd "$_builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--libexecdir=/usr/lib/xfce4 \
+		--localstatedir=/var \
+		--disable-static \
+		|| return 1
+	make || return 1
+}
+
+package() {
+	cd "$_builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+md5sums="d18f407fc79387d81333fbf38bac583d  xfce4-notifyd-0.3.0.tar.bz2"
+sha256sums="7076081424932b40d03366a7518daf495f81eb780f376819e59e76d65d811100  xfce4-notifyd-0.3.0.tar.bz2"
+sha512sums="774eb0daf935fcf3fdb8a40b03ef772b45c4b12408a5e84aff57c0e8c8490c0f3ec4753893dd07a31b7e8094fd065a8a86f56f2e6217ddd6432a8eda0dcb9f9f  xfce4-notifyd-0.3.0.tar.bz2"
